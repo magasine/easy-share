@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Share ⚡ - Manual de Usuário</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+        header {
+            background-color: #031D35;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            letter-spacing: 1px;
+        }
+        nav.main-nav {
+            background-color: #143858;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        nav.main-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        nav.main-nav ul li {
+            margin: 0 15px;
+        }
+        nav.main-nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        nav.main-nav ul li a:hover,
+        nav.main-nav ul li a.active {
+            background-color: #205986;
+            color: #fff;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+        .section {
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .section:last-child {
+            border-bottom: none;
+        }
+        .section h2 {
+            color: #031D35;
+            font-size: 2em;
+            margin-bottom: 15px;
+            border-left: 5px solid #205986;
+            padding-left: 10px;
+        }
+        .section p, .section ul {
+            color: #555;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .section ul {
+            list-style: disc;
+            margin-left: 20px;
+        }
+        .section ol {
+            list-style: decimal;
+            margin-left: 20px;
+        }
+        .section ul li, .section ol li {
+            margin-bottom: 8px;
+        }
+        .image-placeholder {
+            width: 100%;
+            height: 300px;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #888;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            background-image: url('https://via.placeholder.com/900x300?text=Sua+Imagem+do+App+Aqui'); /* Placeholder image */
+            background-size: cover;
+            background-position: center;
+        }
+        kbd {
+            background-color: #eee;
+            border-radius: 3px;
+            border: 1px solid #b4b4b4;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, .2), 0 2px 0 0 rgba(255, 255, 255, .7) inset;
+            color: #333;
+            display: inline-block;
+            font-family: monospace;
+            font-size: .85em;
+            font-weight: 700;
+            padding: 2px 4px;
+            white-space: nowrap;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            background-color: #031D35;
+            color: #fff;
+            font-size: 0.9em;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+        }
+        footer a {
+            color: #ffc107;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Easy Share ⚡ - Manual de Usuário</h1>
+    </header>
+    <nav class="main-nav">
+        <ul>
+            <li><a href="#overview">Visão Geral</a></li>
+            <li><a href="#installation">Instalação e Execução</a></li>
+            <li><a href="#highlighting">Funcionalidades de Destaque</a></li>
+            <li><a href="#citation-sharing">Opções de Citação e Compartilhamento</a></li>
+            <li><a href="#ui-features">Interface do Usuário</a></li>
+            <li><a href="#tips">Dicas de Uso</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div class="off-image-placeholder">
+         <img src="./img_EasyShare_DarkLight_Manual.png" width="400" alt="Layout do Easy Share: Dark e Light"
+            style="display: block; margin: 0 auto;">
+        </div>
+
+        <section id="overview" class="section">
+            <h2>Visão Geral</h2>
+            <p>Bem-vindo ao manual de usuário do <strong>Easy Share ⚡</strong>! Esta ferramenta foi desenvolvida para simplificar a maneira como você interage com o conteúdo da web, permitindo que você destaque textos importantes e os compartilhe ou cite em diversos formatos de maneira eficiente.</p>
+            <p>Com o Easy Share ⚡, você pode capturar informações essenciais de qualquer página, organizá-las e distribuí-las com facilidade, seja para estudos, trabalho ou uso pessoal.</p>
+        </section>
+
+        <section id="installation" class="section">
+            <h2>Instalação e Execução</h2>
+            <p>O Easy Share ⚡ é um <strong>bookmarklet</strong>. Isso significa que ele não é uma extensão de navegador tradicional para ser instalada, mas sim um pequeno código JavaScript armazenado como um favorito (ou "marcador") no seu navegador. Para usá-lo, você precisará adicioná-lo à sua barra de favoritos.</p>
+            <h3>Como Adicionar e Executar o Bookmarklet:</h3>
+            <ol>
+                <li>Primeiro, você precisará obter o código do bookmarklet. Geralmente, ele começa com `javascript:`.</li>
+                <li>No seu navegador (Chrome, Firefox, Edge, Safari, etc.), clique com o botão direito do mouse na sua Barra de Favoritos (se ela não estiver visível, você pode ativá-la nas configurações do navegador) e selecione "Adicionar página..." ou "Adicionar favorito...".</li>
+                <li>No campo "Nome", digite um nome fácil de lembrar para o seu bookmarklet, por exemplo, "Easy Share".</li>
+                <li>No campo "URL" ou "Endereço", cole todo o código JavaScript do bookmarklet. Certifique-se de que o prefixo `javascript:` esteja incluído.</li>
+                <li>Salve o favorito. O "Easy Share" agora deve aparecer na sua barra de favoritos.</li>
+                <li><strong>Para executar o Easy Share ⚡:</strong> Navegue até a página da web onde deseja usar a ferramenta. Em seguida, clique no favorito "Easy Share" que você acabou de criar na sua barra de favoritos. A interface do Easy Share ⚡ aparecerá na página, pronta para uso!</li>
+            </ol>
+            <p>Diferente de extensões que rodam em segundo plano, um bookmarklet só é ativado quando você clica no seu favorito, o que oferece maior controle sobre quando a ferramenta está em uso.</p>
+        </section>
+
+        <section id="highlighting" class="section">
+            <h2>Funcionalidades de Destaque</h2>
+            <p>O Easy Share ⚡ oferece uma maneira intuitiva de destacar informações em páginas da web:</p>
+            <ul>
+                <li><strong>Criar um Destaque:</strong> Para destacar um texto, simplesmente selecione a parte desejada com o mouse e, em seguida, pressione <kbd>Ctrl</kbd> e clique com o botão esquerdo do mouse. O texto selecionado será automaticamente destacado com uma cor.</li>
+                <li><strong>Limite de Seleção:</strong> O comprimento máximo para um destaque é de 10.000 caracteres.</li>
+                <li><strong>Cores dos Destaques:</strong> Os destaques se adaptam ao tema do seu navegador (claro/escuro) para melhor visibilidade. Uma cor de sucesso temporária é exibida ao copiar.</li>
+                <li><strong>Copiar Destaque:</strong> Clique em um destaque na página para copiar o texto correspondente para a área de transferência. Uma breve notificação confirmará a cópia.</li>
+                <li><strong>Mostrar/Ocultar Destaques:</strong> Você pode alternar a visibilidade de todos os destaques na página. Isso permite que você visualize o conteúdo original sem distrações, mas mantendo seus destaques salvos.</li>
+                <li><strong>Limpar Todos os Destaques:</strong> Se desejar remover todos os destaques de uma página, há uma opção para isso. Será solicitada uma confirmação, pois esta ação não pode ser desfeita.</li>
+                <li><strong>Mover Destaques:</strong> Na lista de destaques, você pode selecionar um único destaque e usar as setas '↑' e '↓' para alterar sua ordem na lista.</li>
+            </ul>
+        </section>
+
+        <section id="citation-sharing" class="section">
+            <h2>Opções de Citação e Compartilhamento</h2>
+            <p>Além de destacar, o Easy Share ⚡ facilita a citação e o compartilhamento do conteúdo:</p>
+            <ul>
+                <li><strong>Modos de Citação:</strong>
+                    <ul>
+                        <li><strong>Destaques Selecionados:</strong> Gera uma citação com base nos destaques que você selecionou na lista.</li>
+                        <li><strong>Seleção Única:</strong> Permite citar uma nova seleção de texto diretamente da página, sem destacá-la permanentemente.</li>
+                        <li><strong>Área de Transferência:</strong> Gera uma citação a partir do texto que está atualmente na sua área de transferência.</li>
+                    </ul>
+                </li>
+                <li><strong>Formatos de Citação:</strong> Escolha o formato ideal para sua necessidade: WhatsApp, Acadêmico, HTML, Markdown, Texto Simples ou Twitter/X.</li>
+                <li><strong>Serviços de Legibilidade:</strong> Integre com serviços como PrintFriendly ou Archive.is para abrir a página em um formato mais legível ou para arquivá-la.</li>
+                <li><strong>Ações de Compartilhamento:</strong> Após gerar a citação, você pode copiá-la, enviá-la via WhatsApp, Twitter/X, E-mail ou até mesmo fazer o download do conteúdo.</li>
+            </ul>
+        </section>
+
+        <section id="ui-features" class="section">
+            <h2>Interface do Usuário</h2>
+            <p>O Easy Share ⚡ possui uma interface amigável e personalizável:</p>
+            <ul>
+                <li><strong>Alternar Tema:</strong> Clique no botão de sol/lua para alternar entre o tema claro e o tema escuro da interface, independentemente das configurações do sistema.</li>
+                <li><strong>Minimizar/Fechar:</strong> O botão de minimizar recolhe a interface para liberar espaço na tela, e o botão de fechar remove a ferramenta da página, mantendo seus destaques salvos para futuras visitas.</li>
+                <li><strong>Arrastar e Reposicionar:</strong> Você pode clicar e arrastar a barra de título da ferramenta para movê-la para qualquer lugar na sua tela, ajustando-a à sua preferência.</li>
+                <li><strong>Pesquisar Destaques:</strong> Utilize a barra de pesquisa na seção de destaques para encontrar rapidamente trechos específicos que você destacou.</li>
+            </ul>
+        </section>
+
+        <section id="tips" class="section">
+            <h2>Dicas de Uso</h2>
+            <ul>
+                <li><strong>Persistência de Destaques:</strong> Seus destaques e configurações são salvos automaticamente no seu navegador, então você não precisa se preocupar em perdê-los ao navegar ou fechar a página.</li>
+                <li><strong>Permissões da Área de Transferência:</strong> Em alguns navegadores, pode ser necessário conceder permissão para que o Easy Share ⚡ acesse sua área de transferência. Se tiver problemas ao copiar, verifique as configurações de permissão do seu navegador.</li>
+                <li><strong>Restauração Automática:</strong> Se, por algum motivo, um destaque parecer "sumir" da página (por exemplo, após um carregamento dinâmico de conteúdo), o Easy Share ⚡ tentará restaurá-lo automaticamente.</li>
+            </ul>
+        </section>
+    </div>
+
+    <footer>
+        <p>Autor: <a href="https://linktr.ee/magasine/shop" target="_blank" rel="noopener">@magasine</a></p>
+    </footer>
+</body>
+</html>
