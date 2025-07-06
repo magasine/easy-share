@@ -3,10 +3,9 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share ⚡",
-      version: "v20250704", // beta
-      versionUrl: "https://linktr.ee/magasine/shop",
+      version: "v20250707", // beta
+      versionUrl: "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
-      // helpLink: "...", // TODO  Atualizar
     },
     HIGHLIGHT: {
       MAX_SELECTION_LENGTH: 10000,
@@ -21,6 +20,9 @@ javascript: (() => {
       HIDE_HIGHLIGHTS: "Hide",
       SORT_CREATION: "↓ Creation",
       SORT_ALPHABETICAL: "↑ A-Z",
+      ADD_FACT_CHECK: "Add Fact-Check Links",
+      FACT_CHECK_ENABLED: "Fact-check links added",
+      FACT_CHECK_DISABLED: "Fact-check links removed",
       FEEDBACK: {
         HIGHLIGHT_CREATED: "Highlight created successfully!",
         HIGHLIGHT_FAILED:
@@ -80,9 +82,43 @@ javascript: (() => {
         "main",
       ],
     },
+    FACT_CHECK_SERVICES: [
+      {
+        name: "Google Fact Check",
+        value: "google-fact-check",
+        url: (text) => {
+          const prepareText = (t) => {
+            if (!t) return "";
+            return t
+              .substring(0, 70)
+              .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "")
+              .replace(/\s{2,}/g, " ")
+              .trim();
+          };
+          const query = prepareText(text) || "pesquisa";
+          return `https://toolbox.google.com/factcheck/explorer/search/${encodeURIComponent(
+            query
+          )}?hl=pt`;
+        },
+      },
+      {
+        name: "Aos Fatos (Brasil)",
+        value: "aos-fatos",
+        url: (text) =>
+          `https://www.aosfatos.org/noticias/?q=${encodeURIComponent(text)}`,
+      },
+      {
+        name: "Lupa (Brasil)",
+        value: "lupa",
+        url: (text) =>
+          `https://piaui.folha.uol.com.br/lupa/busca/?q=${encodeURIComponent(
+            text
+          )}`,
+      },
+    ],
     UI: {
       ANIMATION_DURATION: 200,
-      FEEDBACK_DURATION: 3000,
+      FEEDBACK_DURATION: 1000,
       DEBOUNCE_DELAY: 300,
       MAX_WIDTH: 350, // Largura máxima garantida
     },
@@ -142,6 +178,8 @@ javascript: (() => {
         position: { top: "20px", right: "20px", left: "auto" },
         isDragging: false,
         dragOffset: { x: 0, y: 0 },
+        factCheckEnabled: true, // Novo estado para controle do checkbox
+        factCheckService: "google-fact-check", // Serviço padrão
       };
 
       // Cache de elementos DOM para melhor performance
@@ -238,6 +276,9 @@ javascript: (() => {
         themeToggle: shadowRoot.getElementById("theme-toggle"),
         moveUp: shadowRoot.getElementById("move-up"),
         moveDown: shadowRoot.getElementById("move-down"),
+        factCheckCheck: shadowRoot.getElementById("fact-check-check"),
+        factCheckSelect: shadowRoot.getElementById("fact-check-select"),
+        factCheckButton: shadowRoot.getElementById("fact-check-button"),
       };
     }
 
@@ -248,6 +289,7 @@ javascript: (() => {
         CONFIG.CITATION.READABILITY_SERVICES
       );
       this._populateSelect("action-select", CONFIG.CITATION.ACTION_FORMATS);
+      this._populateSelect("fact-check-select", CONFIG.FACT_CHECK_SERVICES);
     }
 
     _populateSelect(id, options) {
@@ -344,6 +386,16 @@ javascript: (() => {
       );
       this.elements.moveDown?.addEventListener("click", () =>
         this._moveHighlightDown()
+      );
+      // Controles de fact-checking
+      this.elements.factCheckCheck?.addEventListener("change", () =>
+        this._toggleFactCheck()
+      );
+      this.elements.factCheckSelect?.addEventListener("change", () =>
+        this._updateCitation()
+      );
+      this.elements.factCheckButton?.addEventListener("click", () =>
+        this._openFactCheck()
       );
     }
 
@@ -476,10 +528,10 @@ javascript: (() => {
           }, 1000);
         }
 
-        this._showFeedback("Texto copiado para o clipboard!", "success");
+        this._showFeedback("Text copied to clipboard!", "success");
       } catch (error) {
         console.error("Failed to copy text:", error);
-        this._showFeedback("Falha ao copiar texto", "error");
+        this._showFeedback("Failed to copy text", "error");
       }
     }
 
@@ -494,6 +546,7 @@ javascript: (() => {
       }
 
       this._updateHighlightVisualState(highlightId);
+      this._updateHighlightsSelectedButton();
       this._updateUI();
       this._saveSettings();
     }
@@ -603,8 +656,9 @@ javascript: (() => {
       this.state.selectedHighlights.clear();
 
       this._saveHighlights();
+      this._updateHighlightsSelectedButton();
       this._updateUI();
-      this._showFeedback("Todos os destaques foram removidos", "info");
+      this._showFeedback("All highlights have been removed", "info");
     }
 
     // ======================
@@ -614,7 +668,7 @@ javascript: (() => {
     _switchTab(tabName) {
       this.state.activeTab = tabName;
 
-      // Atualizar classes e atributos ARIA
+      // Update classes and ARIA attributes
       this.elements.tabHighlights?.classList.toggle(
         "active",
         tabName === "highlights"
@@ -852,7 +906,7 @@ javascript: (() => {
     // ======================
 
     _showFeedback(message, type = "info") {
-      // Remover feedback anterior se existir
+      // Remove previous feedback if exists
       const existingFeedback = this.shadow.querySelector(".feedback-message");
       if (existingFeedback) {
         existingFeedback.remove();
@@ -953,6 +1007,8 @@ javascript: (() => {
           hiddenHighlights: this.state.hiddenHighlights,
           position: this.state.position,
           theme: this.state.theme, // Salvar tema escolhido
+          factCheckEnabled: this.state.factCheckEnabled,
+          factCheckService: this.state.factCheckService,
         };
         localStorage.setItem("unifiedTool_settings", JSON.stringify(settings));
       } catch (error) {
@@ -968,7 +1024,8 @@ javascript: (() => {
 
           // Atualiza apenas as propriedades existentes no estado
           Object.assign(this.state, {
-            activeTab: settings.activeTab || "citation", // Modificado para "citation" como padrão
+            // Configurações existentes
+            activeTab: settings.activeTab || "citation",
             isMinimized: settings.isMinimized || false,
             citationMode: settings.citationMode || "highlights",
             readabilityEnabled:
@@ -982,17 +1039,52 @@ javascript: (() => {
               right: "20px",
               left: "auto",
             },
-            theme: settings.theme || this._detectSystemTheme(), // Mantém a detecção automática como fallback
+            theme: settings.theme || this._detectSystemTheme(),
+
+            // Novas configurações de fact-checking
+            factCheckEnabled:
+              settings.factCheckEnabled !== undefined
+                ? settings.factCheckEnabled
+                : true,
+            factCheckService: settings.factCheckService || "google-fact-check",
           });
 
-          // Força a atualização da UI conforme as configurações carregadas
+          // Atualizar elementos da UI
+          if (this.elements.factCheckCheck) {
+            this.elements.factCheckCheck.checked = this.state.factCheckEnabled;
+          }
+          if (this.elements.factCheckSelect) {
+            this.elements.factCheckSelect.value = this.state.factCheckService;
+          }
+
+          // Configurações existentes de UI
           this._applyTheme(this.state.theme);
-          this._switchTab(this.state.activeTab); // Garante que a tab correta seja ativada
+          this._switchTab(this.state.activeTab);
+          if (this.elements.readabilityCheck) {
+            this.elements.readabilityCheck.checked =
+              this.state.readabilityEnabled;
+          }
+          if (this.elements.hideToggle) {
+            this.elements.hideToggle.textContent = this.state.hiddenHighlights
+              ? CONFIG.TEXTS.SHOW_HIGHLIGHTS
+              : CONFIG.TEXTS.HIDE_HIGHLIGHTS;
+          }
+          if (this.elements.sortToggle) {
+            this.elements.sortToggle.textContent =
+              this.state.sortOrder === "creation"
+                ? CONFIG.TEXTS.SORT_CREATION
+                : CONFIG.TEXTS.SORT_ALPHABETICAL;
+          }
         }
       } catch (error) {
         console.warn("Failed to load settings:", error);
-        // Mantém os valores padrão em caso de erro
-        this._switchTab("citation"); // Força a tab citation como fallback
+        // Valores padrão em caso de erro
+        this._switchTab("citation");
+        this._applyTheme(this._detectSystemTheme());
+
+        // Garantir que os novos estados tenham valores padrão
+        this.state.factCheckEnabled = true;
+        this.state.factCheckService = "google-fact-check";
       }
     }
 
@@ -1192,9 +1284,9 @@ javascript: (() => {
       <a class="app-version" href="${CONFIG.APP_INFO.versionUrl}" title="© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}" target="_blank" rel="noopener">${CONFIG.APP_INFO.version}</a>
     </div>
     <div class="header-controls">
-      <button id="theme-toggle" class="control-btn" aria-label="Alternar tema" title="Alternar tema">🌙</button>
-      <button id="minimize-button" class="control-btn" aria-label="Minimizar" title="Minimizar">−</button>
-      <button id="close-button" class="control-btn" aria-label="Fechar" title="Fechar">×</button>
+      <button id="theme-toggle" class="control-btn" aria-label="Toggle theme" title="Toggle theme">🌙</button>
+      <button id="minimize-button" class="control-btn" aria-label="Minimize" title="Minimize">−</button>
+      <button id="close-button" class="control-btn" aria-label="Close" title="Close">×</button>
     </div>
   </div>
 </div>
@@ -1241,18 +1333,18 @@ javascript: (() => {
   <!-- Agrupamento: Source -->
   <fieldset class="fieldset">
     <legend>Text Source to Load</legend>
-    <div class="mode-buttons" role="radiogroup" aria-label="Modo de citação">
-      <button class="mode-btn active" data-mode="highlights" role="radio" aria-checked="true">Highlights Selected</button>
+    <div class="mode-buttons" role="radiogroup" aria-label="Citation mode">
+      <button class="mode-btn active" data-mode="highlights" role="radio" aria-checked="true">Highlights Selected (0)</button>
       <button class="mode-btn" data-mode="selection" role="radio" aria-checked="false">Single Selection</button>
       <button class="mode-btn" data-mode="clipboard" role="radio" aria-checked="false">Clipboard</button>
     </div>
   </fieldset>
-
+  
   <!-- Agrupamento: Preview -->
   <fieldset class="fieldset">
     <legend>Text Preview</legend>
     <div class="citation-preview-container">
-      <textarea id="citation-preview" class="citation-preview" readonly aria-label="Prévia da citação"></textarea>
+      <textarea id="citation-preview" class="citation-preview" readonly aria-label="Citation preview"></textarea>
     </div>
   </fieldset>
 
@@ -1263,7 +1355,12 @@ javascript: (() => {
   <!-- Checkbox separado, fora dos agrupamentos -->
   <div class="control-group">
     <input type="checkbox" id="readability-check" checked>
-    <label for="readability-check">Add Links: Readability Services and Credits</label>
+    <label for="readability-check">Add Readability Services Links</label>
+  </div>
+    
+  <div class="control-group">
+    <input type="checkbox" id="fact-check-check" checked>
+    <label for="fact-check-check">${CONFIG.TEXTS.ADD_FACT_CHECK}</label>
   </div>
 
   <!-- Agrupamento: Selectors -->
@@ -1276,12 +1373,18 @@ javascript: (() => {
     </div>
 
     <div class="control-group">
-      <label for="readability-select">Services:</label>
+      <label for="readability-select">Readability:</label>
       <div class="readability-control">
         <select id="readability-select" aria-label="Reading service"></select>
         <button id="readability-button" class="btn btn-secondary" aria-label="Open readable page" title="Open readable page">🔎</button>
       </div>
-    </div>
+   </div>
+        
+   <div class="control-group">
+        <label for="fact-check-select">Fact Check:</label>
+        <select id="fact-check-select" aria-label="Fact-check service"></select>
+        <button id="fact-check-button" class="btn btn-secondary" aria-label="Open fact check page" title="Open fact check page">🔎</button>
+   </div>
 
     <div class="control-group">
       <label for="action-select" id="submit">Submit: ⚡</label>
@@ -1453,7 +1556,7 @@ javascript: (() => {
 
         .unified-container[data-theme="dark"] .highlights-counter,
         .unified-container[data-theme="dark"] .highlights-help {
-          /* background: var(--dark-surface); */
+          background: var(--dark-bg);
           color: var(--dark-text-muted);
           border-color: var(--dark-bg);
         }
@@ -1795,11 +1898,11 @@ javascript: (() => {
         }
 
         .highlights-counter {
-          font-size: var(--font-size-xs);
-          color: var(--light-text-muted);
+          font-size: var(--font-size-sm);
+          color: var(--litght-text);
           text-align: center;
           padding: var(--spacing-sm);
-          background: var(--light-surface);
+          background: var(--light-bg);
           border-radius: var(--border-radius-sm);
           border: 1px solid var(--light-border);
           font-weight: 500;
@@ -1987,6 +2090,16 @@ javascript: (() => {
 
         .readability-control select {
           flex: 1;
+        }
+
+        .fact-check-control {
+          display: flex;
+          gap: var(--spacing-sm);
+          flex: 1;
+        }
+
+        .fact-check-control select {
+         flex: 1;
         }
 
         /* ===== PREVIEW DE CITAÇÃO MELHORADO ===== */
@@ -2309,6 +2422,17 @@ javascript: (() => {
       this._updateCitation();
       this._updateThemeToggleIcon();
       this._updateHideToggleText();
+      this._updateHighlightsSelectedButton();
+    }
+
+    _updateHighlightsSelectedButton() {
+      const selectedCount = this.state.selectedHighlights.size;
+      const highlightsBtn = this.shadow.querySelector(
+        '[data-mode="highlights"]'
+      );
+      if (highlightsBtn) {
+        highlightsBtn.textContent = `Highlights Selected (${selectedCount})`;
+      }
     }
 
     _updateHideToggleText() {
@@ -2448,8 +2572,9 @@ javascript: (() => {
       this.state.selectedHighlights.delete(highlight);
 
       this._saveHighlights();
+      this._updateHighlightsSelectedButton();
       this._updateUI();
-      this._showFeedback("Destaque removido", "info");
+      this._showFeedback("Highlight removed", "info");
     }
 
     _updateCitation() {
@@ -2525,9 +2650,29 @@ javascript: (() => {
         );
         if (serviceConfig) {
           content += `\n- Readability: ${serviceConfig.url(location.href)}`;
-          content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.versionUrl}`;
+          //  content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.versionUrl}`;
         }
       }
+
+      // Adicionar link de fact-checking se habilitado
+      if (
+        this.state.factCheckEnabled &&
+        content &&
+        !content.includes("No highlights")
+      ) {
+        const service = this.elements.factCheckSelect?.value;
+        const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
+          (s) => s.value === service
+        );
+
+        if (serviceConfig) {
+          // Extrair o primeiro parágrafo ou linha para a busca
+          const searchText = content.split("\n")[0].substring(0, 100);
+          content += `\n- Fact-Check: ${serviceConfig.url(searchText)}`;
+        }
+      }
+
+      content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.versionUrl}`;
 
       preview.value = content;
     }
@@ -2676,16 +2821,13 @@ javascript: (() => {
         content === "⚠️ No highlights selected" ||
         content === "Empty clipboard"
       ) {
-        this._showFeedback(
-          "Nenhum conteúdo válido para enviar por e-mail",
-          "warning"
-        );
+        this._showFeedback("No valid content to send by email", "warning");
         return;
       }
 
       // Criar elementos do e-mail
       const pageTitle = document.title;
-      const subject = `${pageTitle} - [© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}]`;
+      const subject = `${pageTitle} [© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}]`;
       const body = encodeURIComponent(content);
 
       // Criar o link mailto com todos os parâmetros
@@ -2709,16 +2851,10 @@ javascript: (() => {
           throw new Error("Popup bloqueado");
         }
 
-        this._showFeedback(
-          "Cliente de e-mail aberto em nova janela",
-          "success"
-        );
+        this._showFeedback("Email client opened in new window", "success");
       } catch (error) {
         console.error("Falha ao abrir cliente de e-mail:", error);
-        this._showFeedback(
-          "Permita popups para abrir o cliente de e-mail",
-          "error"
-        );
+        this._showFeedback("Allow popups to open email client", "error");
       }
     }
 
@@ -2791,6 +2927,18 @@ javascript: (() => {
       this._saveSettings();
     }
 
+    _toggleFactCheck() {
+      this.state.factCheckEnabled =
+        this.elements.factCheckCheck?.checked || false;
+      this._updateCitation();
+      this._saveSettings();
+
+      const message = this.state.factCheckEnabled
+        ? CONFIG.TEXTS.FACT_CHECK_ENABLED
+        : CONFIG.TEXTS.FACT_CHECK_DISABLED;
+      this._showFeedback(message, "info");
+    }
+
     _handleActionSelect(e) {
       const action = e.target.value;
       if (!action) return;
@@ -2846,6 +2994,74 @@ javascript: (() => {
         const url = serviceConfig.url(location.href);
         window.open(url, "_blank");
       }
+    }
+
+    _openFactCheck() {
+      try {
+        const service = this.elements.factCheckSelect?.value;
+        const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
+          (s) => s.value === service
+        );
+
+        if (!serviceConfig) {
+          this._showFeedback("Select a fact-checking service", "error");
+          return;
+        }
+
+        // Obter texto baseado no modo
+        let searchText = "";
+        switch (this.state.citationMode) {
+          case "highlights":
+            const selected = Array.from(this.state.selectedHighlights);
+            searchText = selected[0]?.text || document.title;
+            break;
+          case "selection":
+            searchText =
+              window.getSelection().toString().trim() || document.title;
+            break;
+          case "clipboard":
+            searchText = this.state.clipboardContent || document.title;
+            break;
+          default:
+            searchText = document.title;
+        }
+
+        // Abrir serviço
+        const url = serviceConfig.url(searchText);
+        window.open(url, "_blank", "noopener,noreferrer");
+
+        this._showFeedback(
+          `Checking in ${serviceConfig.name}...`,
+          "success"
+        );
+      } catch (error) {
+        console.error("Fact-Check Error:", error);
+        this._showFeedback("Error opening verification", "error");
+      }
+    }
+
+    // Novo método auxiliar para preparar o texto
+    _prepareFactCheckText(text) {
+      if (!text) return "";
+
+      // 1. Limite aumentado para 70 caracteres (melhor cobertura)
+      let processed = text.substring(0, 70);
+
+      // 2. Otimização para frases completas
+      const lastSpace = processed.lastIndexOf(" ");
+      if (lastSpace > 50) {
+        // Se cortou no meio de uma palavra
+        processed = processed.substring(0, lastSpace);
+      }
+
+      // 3. Sanitização aprimorada
+      processed = processed
+        .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "") // Mantém hífens e vírgulas
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+      // 4. Fallback inteligente
+      return processed || document.title.substring(0, 50);
     }
 
     _escapeHtml(text) {
