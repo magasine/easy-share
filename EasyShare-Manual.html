@@ -130,95 +130,149 @@
             box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
         }
         footer a {
-            color: #ffc107;
+            color: #fff;
             text-decoration: none;
             font-weight: bold;
-        }
-        footer a:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Easy Share ⚡ - Manual de Usuário</h1>
+        <h1>Easy Share ⚡</h1>
+        <p>Versão: v20250707 - Manual de Usuário</p>
     </header>
+
     <nav class="main-nav">
         <ul>
-            <li><a href="#overview">Visão Geral</a></li>
-            <li><a href="#installation">Instalação e Execução</a></li>
-            <li><a href="#highlighting">Funcionalidades de Destaque</a></li>
-            <li><a href="#citation-sharing">Opções de Citação e Compartilhamento</a></li>
-            <li><a href="#ui-features">Interface do Usuário</a></li>
+            <li><a href="#introducao">Introdução</a></li>
+            <li><a href="#instalacao">Instalação</a></li>
+            <li><a href="#uso-basico">Uso Básico</a></li>
+            <li><a href="#gerenciamento-destaques">Gerenciamento de Destaques</a></li>
+            <li><a href="#opcoes-citacao">Opções de Citação</a></li>
+            <li><a href="#verificacao-fatos">Verificação de Fatos</a></li>
+            <li><a href="#configuracoes-avancadas">Configurações Avançadas</a></li>
+            <li><a href="#solucao-problemas">Solução de Problemas</a></li>
             <li><a href="#tips">Dicas de Uso</a></li>
         </ul>
     </nav>
+
+
+    <div class="container">
+        <section id="introducao" class="section">
+            <h2>Introdução</h2>
     <div class="container">
         <div class="off-image-placeholder">
-         <img src="./img_EasyShare_DarkLight_Manual.png" width="400" alt="Layout do Easy Share: Dark e Light"
+         <img src="./img_EasyShare_DarkLight_Manual.png" width="450" alt="Layout do Easy Share: Dark e Light"
             style="display: block; margin: 0 auto;">
         </div>
-
-        <section id="overview" class="section">
-            <h2>Visão Geral</h2>
-            <p>Bem-vindo ao manual de usuário do <strong>Easy Share ⚡</strong>! Esta ferramenta foi desenvolvida para simplificar a maneira como você interage com o conteúdo da web, permitindo que você destaque textos importantes e os compartilhe ou cite em diversos formatos de maneira eficiente.</p>
-            <p>Com o Easy Share ⚡, você pode capturar informações essenciais de qualquer página, organizá-las e distribuí-las com facilidade, seja para estudos, trabalho ou uso pessoal.</p>
+            <p>Bem-vindo ao manual do usuário do <strong>Easy Share ⚡</strong>, uma ferramenta inovadora para realçar, organizar e citar informações importantes diretamente de qualquer página web. Este manual irá guiá-lo por todas as funcionalidades, desde a instalação até o uso avançado.</p>
+            <p>Com o Easy Share ⚡, você pode transformar a maneira como interage com o conteúdo online, tornando a pesquisa, o estudo e o compartilhamento de informações mais eficientes.</p>
         </section>
 
-        <section id="installation" class="section">
-            <h2>Instalação e Execução</h2>
-            <p>O Easy Share ⚡ é um <strong>bookmarklet</strong>. Isso significa que ele não é uma extensão de navegador tradicional para ser instalada, mas sim um pequeno código JavaScript armazenado como um favorito (ou "marcador") no seu navegador. Para usá-lo, você precisará adicioná-lo à sua barra de favoritos.</p>
-            <h3>Como Adicionar e Executar o Bookmarklet:</h3>
+        <section id="instalacao" class="section">
+            <h2>Instalação</h2>
+            <p>O Easy Share ⚡ é um <em>bookmarklet</em>, o que significa que não requer instalação complexa ou extensões. Siga os passos simples:</p>
             <ol>
-                <li>Primeiro, você precisará obter o código do bookmarklet. Geralmente, ele começa com `javascript:`.</li>
-                <li>No seu navegador (Chrome, Firefox, Edge, Safari, etc.), clique com o botão direito do mouse na sua Barra de Favoritos (se ela não estiver visível, você pode ativá-la nas configurações do navegador) e selecione "Adicionar página..." ou "Adicionar favorito...".</li>
-                <li>No campo "Nome", digite um nome fácil de lembrar para o seu bookmarklet, por exemplo, "Easy Share".</li>
-                <li>No campo "URL" ou "Endereço", cole todo o código JavaScript do bookmarklet. Certifique-se de que o prefixo `javascript:` esteja incluído.</li>
-                <li>Salve o favorito. O "Easy Share" agora deve aparecer na sua barra de favoritos.</li>
-                <li><strong>Para executar o Easy Share ⚡:</strong> Navegue até a página da web onde deseja usar a ferramenta. Em seguida, clique no favorito "Easy Share" que você acabou de criar na sua barra de favoritos. A interface do Easy Share ⚡ aparecerá na página, pronta para uso!</li>
+                <li><strong>Arraste o Bookmarklet:</strong> Arraste o botão "Easy Share ⚡" (disponibilizado na página de download ou fonte oficial) para a sua barra de favoritos do navegador.</li>
+                <li><strong>Ou Crie Manualmente:</strong> Se preferir, crie um novo favorito no seu navegador com qualquer nome (ex: "Easy Share") e cole o código JavaScript completo do Easy Share ⚡ (que geralmente começa com <code>javascript: (() => { /* ... */ })();</code>) no campo de URL.</li>
             </ol>
-            <p>Diferente de extensões que rodam em segundo plano, um bookmarklet só é ativado quando você clica no seu favorito, o que oferece maior controle sobre quando a ferramenta está em uso.</p>
+            <p>Após adicionar, basta clicar no bookmarklet na sua barra de favoritos em qualquer página para ativar a ferramenta.</p>
         </section>
 
-        <section id="highlighting" class="section">
-            <h2>Funcionalidades de Destaque</h2>
-            <p>O Easy Share ⚡ oferece uma maneira intuitiva de destacar informações em páginas da web:</p>
+        <section id="uso-basico" class="section">
+            <h2>Uso Básico</h2>
             <ul>
-                <li><strong>Criar um Destaque:</strong> Para destacar um texto, simplesmente selecione a parte desejada com o mouse e, em seguida, pressione <kbd>Ctrl</kbd> e clique com o botão esquerdo do mouse. O texto selecionado será automaticamente destacado com uma cor.</li>
-                <li><strong>Limite de Seleção:</strong> O comprimento máximo para um destaque é de 10.000 caracteres.</li>
-                <li><strong>Cores dos Destaques:</strong> Os destaques se adaptam ao tema do seu navegador (claro/escuro) para melhor visibilidade. Uma cor de sucesso temporária é exibida ao copiar.</li>
-                <li><strong>Copiar Destaque:</strong> Clique em um destaque na página para copiar o texto correspondente para a área de transferência. Uma breve notificação confirmará a cópia.</li>
-                <li><strong>Mostrar/Ocultar Destaques:</strong> Você pode alternar a visibilidade de todos os destaques na página. Isso permite que você visualize o conteúdo original sem distrações, mas mantendo seus destaques salvos.</li>
-                <li><strong>Limpar Todos os Destaques:</strong> Se desejar remover todos os destaques de uma página, há uma opção para isso. Será solicitada uma confirmação, pois esta ação não pode ser desfeita.</li>
-                <li><strong>Mover Destaques:</strong> Na lista de destaques, você pode selecionar um único destaque e usar as setas '↑' e '↓' para alterar sua ordem na lista.</li>
+                <li><strong>Realçar Texto:</strong> Para criar um destaque, selecione o texto desejado na página e pressione <kbd>Ctrl</kbd> enquanto solta o botão do mouse. O texto selecionado será automaticamente realçado e adicionado à sua lista de destaques.</li>
+                <li><strong>Validação de Seleção:</strong> A ferramenta agora valida o texto selecionado. Se o texto for muito longo (limite de 10.000 caracteres) ou vazio, você receberá uma mensagem de feedback.</li>
+                <li><strong>Copiar Destaque:</strong> Clique em um destaque na própria página para copiá-lo rapidamente para a área de transferência. Uma breve animação indicará o sucesso.</li>
+                <li><strong>Interagir com a Ferramenta:</strong> Após ativar, uma pequena janela aparecerá no canto da tela. Esta é a interface principal da ferramenta, onde você gerenciará seus destaques e citações. Você pode arrastá-la para reposicionar.</li>
             </ul>
         </section>
 
-        <section id="citation-sharing" class="section">
-            <h2>Opções de Citação e Compartilhamento</h2>
-            <p>Além de destacar, o Easy Share ⚡ facilita a citação e o compartilhamento do conteúdo:</p>
+        <section id="gerenciamento-destaques" class="section">
+            <h2>Gerenciamento de Destaques</h2>
+            <p>A aba "Destaques" na ferramenta permite que você gerencie todos os trechos realçados:</p>
+            <ul>
+                <li><strong>Lista de Destaques:</strong> Visualize todos os seus destaques em uma lista organizada.</li>
+                <li><strong>Pesquisar Destaques:</strong> Utilize a barra de pesquisa para encontrar rapidamente trechos específicos que você destacou.</li>
+                <li><strong>Ordenar Destaques:</strong> Alterne entre a ordenação por "Criação" (ordem cronológica) e "Alfabética" (A-Z) clicando no botão de ordenação.</li>
+                <li><strong>Mover Destaques (Novo!):</strong> Selecione um único destaque na lista e use os botões "Mover para Cima" (⬆️) ou "Mover para Baixo" (⬇️) para reordenar sua posição na lista.</li>
+                <li><strong>Ocultar/Exibir Destaques:</strong> Clique no botão "Ocultar" para tornar todos os destaques transparentes na página, ou "Exibir" para mostrá-los novamente. Isso não os remove, apenas altera a visibilidade.</li>
+                <li><strong>Limpar Todos os Destaques:</strong> O botão "Limpar Tudo" removerá <strong>todos</strong> os destaques da página e da sua lista. <strong>(Novo: Uma confirmação será solicitada antes de prosseguir para evitar perdas acidentais.)</strong></li>
+            </ul>
+        </section>
+
+        <section id="opcoes-citacao" class="section">
+            <h2>Opções de Citação</h2>
+            <p>A aba "Citação" oferece diversas maneiras de gerar e compartilhar o conteúdo realçado:</p>
             <ul>
                 <li><strong>Modos de Citação:</strong>
                     <ul>
-                        <li><strong>Destaques Selecionados:</strong> Gera uma citação com base nos destaques que você selecionou na lista.</li>
-                        <li><strong>Seleção Única:</strong> Permite citar uma nova seleção de texto diretamente da página, sem destacá-la permanentemente.</li>
-                        <li><strong>Área de Transferência:</strong> Gera uma citação a partir do texto que está atualmente na sua área de transferência.</li>
+                        <li><strong>Destaques Selecionados:</strong> Gera uma citação dos destaques que você marcou na lista.</li>
+                        <li><strong>Conteúdo da Página:</strong> Cita o conteúdo principal da página (útil para artigos, blogs).</li>
+                        <li><strong>Área de Transferência:</strong> Gera uma citação baseada no texto que está atualmente na sua área de transferência.</li>
                     </ul>
                 </li>
-                <li><strong>Formatos de Citação:</strong> Escolha o formato ideal para sua necessidade: WhatsApp, Acadêmico, HTML, Markdown, Texto Simples ou Twitter/X.</li>
-                <li><strong>Serviços de Legibilidade:</strong> Integre com serviços como PrintFriendly ou Archive.is para abrir a página em um formato mais legível ou para arquivá-la.</li>
-                <li><strong>Ações de Compartilhamento:</strong> Após gerar a citação, você pode copiá-la, enviá-la via WhatsApp, Twitter/X, E-mail ou até mesmo fazer o download do conteúdo.</li>
+                <li><strong>Formatos de Citação (Novos e Atualizados!):</strong> Escolha entre vários formatos para exportar sua citação:
+                    <ul>
+                        <li><strong>Formato WhatsApp:</strong> Ideal para compartilhamento rápido em conversas.</li>
+                        <li><strong>Citação Acadêmica:</strong> Formato padrão para trabalhos e pesquisas.</li>
+                        <li><strong>HTML:</strong> Gera o conteúdo formatado em HTML.</li>
+                        <li><strong>Markdown:</strong> Formato leve para textos simples e documentação.</li>
+                        <li><strong>Texto Simples:</strong> Apenas o texto puro dos destaques.</li>
+                        <li><strong>Twitter/X:</strong> Otimizado para postagens curtas na plataforma.</li>
+                    </ul>
+                </li>
+                <li><strong>Ações de Citação (Novo!):</strong> Além de copiar, você pode agora:
+                    <ul>
+                        <li><strong>Copiar:</strong> Copia a citação gerada para a área de transferência. (Feedback aprimorado para indicar quando o clipboard está sendo atualizado ou se há erro de permissão.)</li>
+                        <li><strong>WhatsApp:</strong> Abre o WhatsApp com a citação pronta para envio.</li>
+                        <li><strong>Twitter/X:</strong> Abre o Twitter/X com a citação para uma nova postagem.</li>
+                        <li><strong>Email:</strong> Abre seu cliente de e-mail com a citação.</li>
+                        <li><strong>Download:</strong> Baixa a citação como um arquivo de texto.</li>
+                    </ul>
+                </li>
+                <li><strong>Serviços de Leitura (Readability - Novo!):</strong> Converta a página atual para um formato mais legível ou arquive-a:
+                    <ul>
+                        <li><strong>PrintFriendly:</strong> Abre a página em uma versão otimizada para impressão e leitura.</li>
+                        <li><strong>Archive.is:</strong> Cria um arquivo permanente da página web para referência futura.</li>
+                    </ul>
+                    Basta selecionar o serviço e clicar no botão correspondente.
+                </li>
+                <li><strong>Pré-visualização:</strong> Veja como sua citação ficará antes de copiá-la ou exportá-la.</li>
             </ul>
         </section>
 
-        <section id="ui-features" class="section">
-            <h2>Interface do Usuário</h2>
-            <p>O Easy Share ⚡ possui uma interface amigável e personalizável:</p>
+        <section id="verificacao-fatos" class="section">
+            <h2>Verificação de Fatos (Novo!)</h2>
+            <p>O Easy Share ⚡ agora integra ferramentas de verificação de fatos para auxiliar na pesquisa de informações. Esta funcionalidade permite que você rapidamente consulte serviços de checagem para o texto destacado.</p>
             <ul>
-                <li><strong>Alternar Tema:</strong> Clique no botão de sol/lua para alternar entre o tema claro e o tema escuro da interface, independentemente das configurações do sistema.</li>
-                <li><strong>Minimizar/Fechar:</strong> O botão de minimizar recolhe a interface para liberar espaço na tela, e o botão de fechar remove a ferramenta da página, mantendo seus destaques salvos para futuras visitas.</li>
-                <li><strong>Arrastar e Reposicionar:</strong> Você pode clicar e arrastar a barra de título da ferramenta para movê-la para qualquer lugar na sua tela, ajustando-a à sua preferência.</li>
-                <li><strong>Pesquisar Destaques:</strong> Utilize a barra de pesquisa na seção de destaques para encontrar rapidamente trechos específicos que você destacou.</li>
+                <li><strong>Habilitar/Desabilitar:</strong> Marque ou desmarque a caixa "Adicionar Links de Verificação de Fatos" para ativar ou desativar a exibição dos links.</li>
+                <li><strong>Serviços Disponíveis:</strong> Escolha entre os seguintes serviços de verificação:
+                    <ul>
+                        <li><strong>Google Fact Check:</strong> Pesquisa o texto selecionado na ferramenta de verificação de fatos do Google.</li>
+                        <li><strong>Aos Fatos (Brasil):</strong> Direciona para a pesquisa do site Aos Fatos.</li>
+                        <li><strong>Lupa (Brasil):</strong> Direciona para a pesquisa do site Lupa.</li>
+                    </ul>
+                </li>
+                <li><strong>Como Usar:</strong> Com a opção de verificação de fatos ativada e o serviço selecionado, clique no botão "Verificar Fatos" para abrir uma nova aba com os resultados da busca pelo seu destaque.</li>
+            </ul>
+        </section>
+
+        <section id="configuracoes-avancadas" class="section">
+            <h2>Configurações Avançadas</h2>
+            <ul>
+                <li><strong>Alternar Tema (Novo!):</strong> Clique no ícone de sol (☀️) ou lua (🌙) na barra de título da ferramenta para alternar entre os temas claro e escuro. A ferramenta lembrará sua preferência.</li>
+                <li><strong>Arrastar e Reposicionar:</strong> Você pode clicar e arrastar a barra de título da ferramenta para movê-la para qualquer lugar na sua tela, ajustando-a à sua preferência. A ferramenta lembrará a última posição.</li>
+                <li><strong>Minimizar/Fechar:</strong> Use os botões na barra de título para minimizar a ferramenta (mantendo-a ativa, mas fora do caminho) ou fechá-la. Se fechar, seus destaques serão salvos, mas a interface desaparecerá até ser reativada.</li>
+            </ul>
+        </section>
+
+        <section id="solucao-problemas" class="section">
+            <h2>Solução de Problemas</h2>
+            <ul>
+                <li><strong>Destaques Sumiram:</strong> Se um destaque parecer "sumir" após o carregamento dinâmico de conteúdo em uma página, o Easy Share ⚡ tentará restaurá-lo automaticamente.</li>
+                <li><strong>Problemas ao Copiar:</strong> Em alguns navegadores, pode ser necessário conceder permissão para que o Easy Share ⚡ acesse sua área de transferência. Se tiver problemas ao copiar, verifique as configurações de permissão do seu navegador.</li>
             </ul>
         </section>
 
@@ -226,8 +280,8 @@
             <h2>Dicas de Uso</h2>
             <ul>
                 <li><strong>Persistência de Destaques:</strong> Seus destaques e configurações são salvos automaticamente no seu navegador, então você não precisa se preocupar em perdê-los ao navegar ou fechar a página.</li>
-                <li><strong>Permissões da Área de Transferência:</strong> Em alguns navegadores, pode ser necessário conceder permissão para que o Easy Share ⚡ acesse sua área de transferência. Se tiver problemas ao copiar, verifique as configurações de permissão do seu navegador.</li>
                 <li><strong>Restauração Automática:</strong> Se, por algum motivo, um destaque parecer "sumir" da página (por exemplo, após um carregamento dinâmico de conteúdo), o Easy Share ⚡ tentará restaurá-lo automaticamente.</li>
+                <li><strong>Explore os Formatos:</strong> Experimente os diferentes formatos de citação e ações para encontrar o que melhor se adapta ao seu fluxo de trabalho.</li>
             </ul>
         </section>
     </div>
