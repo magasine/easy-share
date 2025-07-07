@@ -6,6 +6,7 @@ javascript: (() => {
       version: "v20250707", // beta
       versionUrl: "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
+      creditsUrl: "https://linktr.ee/magasine/shop",
     },
     HIGHLIGHT: {
       MAX_SELECTION_LENGTH: 10000,
@@ -2650,7 +2651,6 @@ javascript: (() => {
         );
         if (serviceConfig) {
           content += `\n- Readability: ${serviceConfig.url(location.href)}`;
-          //  content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.versionUrl}`;
         }
       }
 
@@ -2672,7 +2672,7 @@ javascript: (() => {
         }
       }
 
-      content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.versionUrl}`;
+      content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.creditsUrl}`;
 
       preview.value = content;
     }
