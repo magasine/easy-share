@@ -4,7 +4,8 @@ javascript: (() => {
     APP_INFO: {
       name: "Easy Share ⚡",
       version: "v20250707", // beta
-      versionUrl: "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
+      versionUrl:
+        "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
       creditsUrl: "https://linktr.ee/magasine/shop",
     },
@@ -112,9 +113,7 @@ javascript: (() => {
         name: "Lupa (Brasil)",
         value: "lupa",
         url: (text) =>
-          `https://piaui.folha.uol.com.br/lupa/busca/?q=${encodeURIComponent(
-            text
-          )}`,
+          `https://lupa.uol.com.br/busca/${encodeURIComponent(text)}`,
       },
     ],
     UI: {
@@ -179,8 +178,8 @@ javascript: (() => {
         position: { top: "20px", right: "20px", left: "auto" },
         isDragging: false,
         dragOffset: { x: 0, y: 0 },
-        factCheckEnabled: true, // Novo estado para controle do checkbox
-        factCheckService: "google-fact-check", // Serviço padrão
+        factCheckEnabled: false, 
+        factCheckService: "google-fact-check", 
       };
 
       // Cache de elementos DOM para melhor performance
@@ -1084,7 +1083,7 @@ javascript: (() => {
         this._applyTheme(this._detectSystemTheme());
 
         // Garantir que os novos estados tenham valores padrão
-        this.state.factCheckEnabled = true;
+        this.state.factCheckEnabled = false;
         this.state.factCheckService = "google-fact-check";
       }
     }
@@ -1250,7 +1249,7 @@ javascript: (() => {
         }
 
         const text = await navigator.clipboard.readText();
-        this.state.clipboardContent = text || "Clipboard vazio";
+        this.state.clipboardContent = text || "Empty clipboard";
         this.state.clipboardError = null;
 
         // Atualizar a citação se estivermos no modo clipboard
@@ -1262,7 +1261,7 @@ javascript: (() => {
       } catch (error) {
         console.error("Clipboard access failed:", error);
         this.state.clipboardError = error.message;
-        this.state.clipboardContent = "Erro ao acessar clipboard";
+        this.state.clipboardContent = "Error accessing clipboard";
 
         if (this.state.citationMode === "clipboard") {
           this._updateCitation();
@@ -2624,9 +2623,9 @@ javascript: (() => {
           break;
 
         case "clipboard":
-          content = this.state.clipboardContent || "Clipboard vazio";
+          content = this.state.clipboardContent || "Empty clipboard";
           // Aplicar formatação mesmo para conteúdo do clipboard se não estiver vazio
-          if (content !== "Clipboard vazio") {
+          if (content !== "Empty clipboard") {
             content = this._formatContent(
               [content],
               format,
@@ -3030,10 +3029,7 @@ javascript: (() => {
         const url = serviceConfig.url(searchText);
         window.open(url, "_blank", "noopener,noreferrer");
 
-        this._showFeedback(
-          `Checking in ${serviceConfig.name}...`,
-          "success"
-        );
+        this._showFeedback(`Checking in ${serviceConfig.name}...`, "success");
       } catch (error) {
         console.error("Fact-Check Error:", error);
         this._showFeedback("Error opening verification", "error");
