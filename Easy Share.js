@@ -113,7 +113,10 @@ javascript: (() => {
         name: "Lupa (Brasil)",
         value: "lupa",
         url: (text) =>
-          `https://lupa.uol.com.br/busca/${encodeURIComponent(text)}`,
+          `https://lupa.uol.com.br/busca/${encodeURIComponent(text)}`, // TODO publicar em nova versão
+        // `https://piaui.folha.uol.com.br/lupa/busca/?q=${encodeURIComponent(
+        //   text
+        // )}`, // Url descontinuado
       },
     ],
     UI: {
@@ -178,8 +181,8 @@ javascript: (() => {
         position: { top: "20px", right: "20px", left: "auto" },
         isDragging: false,
         dragOffset: { x: 0, y: 0 },
-        factCheckEnabled: false, 
-        factCheckService: "google-fact-check", 
+        factCheckEnabled: false, // Novo estado para controle do checkbox
+        factCheckService: "google-fact-check", // Serviço padrão
       };
 
       // Cache de elementos DOM para melhor performance
@@ -3111,6 +3114,13 @@ javascript: (() => {
     }
   }
 
-  // Inicializar a ferramenta
-  new UnifiedTool();
+  // Lógica de alternância:
+  if (window.unifiedCitationHighlighterInstance) {
+    // Se a instância existe, destrua-a e remova a referência global
+    window.unifiedCitationHighlighterInstance.destroy();
+    delete window.unifiedCitationHighlighterInstance;
+  } else {
+    // Se não existe, crie uma nova instância
+    new UnifiedTool();
+  }
 })();
