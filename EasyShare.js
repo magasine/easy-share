@@ -3,7 +3,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share ⚡",
-      version: "v20250707", // beta
+      version: "v20250708", // beta
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -1252,7 +1252,7 @@ javascript: (() => {
         }
 
         const text = await navigator.clipboard.readText();
-        this.state.clipboardContent = text || "Empty clipboard";
+        this.state.clipboardContent = text || "⚠️ Empty clipboard";
         this.state.clipboardError = null;
 
         // Atualizar a citação se estivermos no modo clipboard
@@ -2626,9 +2626,9 @@ javascript: (() => {
           break;
 
         case "clipboard":
-          content = this.state.clipboardContent || "Empty clipboard";
+          content = this.state.clipboardContent || "⚠️ Empty clipboard";
           // Aplicar formatação mesmo para conteúdo do clipboard se não estiver vazio
-          if (content !== "Empty clipboard") {
+          if (content !== "⚠️ Empty clipboard") {
             content = this._formatContent(
               [content],
               format,
@@ -2644,8 +2644,8 @@ javascript: (() => {
       if (
         this.state.readabilityEnabled &&
         content &&
-        !content.includes("No highlights") &&
-        content !== "Empty clipboard"
+        !content.includes("⚠️ No highlights") &&
+        content !== "⚠️ Empty clipboard"
       ) {
         const service = this.elements.readabilitySelect?.value;
         const serviceConfig = CONFIG.CITATION.READABILITY_SERVICES.find(
@@ -2660,7 +2660,7 @@ javascript: (() => {
       if (
         this.state.factCheckEnabled &&
         content &&
-        !content.includes("No highlights")
+        !content.includes("⚠️ No highlights")
       ) {
         const service = this.elements.factCheckSelect?.value;
         const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
@@ -2821,7 +2821,7 @@ javascript: (() => {
       if (
         !content ||
         content === "⚠️ No highlights selected" ||
-        content === "Empty clipboard"
+        content === "⚠️ Empty clipboard"
       ) {
         this._showFeedback("No valid content to send by email", "warning");
         return;
