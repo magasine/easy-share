@@ -181,7 +181,7 @@ javascript: (() => {
         position: { top: "20px", right: "20px", left: "auto" },
         isDragging: false,
         dragOffset: { x: 0, y: 0 },
-        factCheckEnabled: false, // Novo estado para controle do checkbox
+        factCheckEnabled: true, // Novo estado para controle do checkbox
         factCheckService: "google-fact-check", // Serviço padrão
       };
 
@@ -1086,7 +1086,7 @@ javascript: (() => {
         this._applyTheme(this._detectSystemTheme());
 
         // Garantir que os novos estados tenham valores padrão
-        this.state.factCheckEnabled = false;
+        this.state.factCheckEnabled = true;
         this.state.factCheckService = "google-fact-check";
       }
     }
