@@ -1299,7 +1299,7 @@ javascript: (() => {
   Highlights List
 </button>
 <button id="tab-citation" class="tab-btn active" role="tab" aria-selected="false" aria-controls="citation-tab">
-  Citation Compose
+  Load Citation
 </button>
 </nav>
 
