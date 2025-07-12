@@ -3,7 +3,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share ⚡",
-      version: "v20250708", // beta
+      version: "v20250709",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -1628,7 +1628,7 @@ javascript: (() => {
           cursor: pointer;
           font-size: var(--font-size-lg);
           font-weight: 500;
-          padding: var(--spacing-sm);
+          padding: var(--spacing-xm);
           min-width: 36px;
           min-height: 36px;
           display: flex;
@@ -1985,28 +1985,55 @@ javascript: (() => {
           line-height: var(--line-height);
           margin-bottom: var(--spacing-xs);
           word-wrap: break-word;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transition: all 0.3s ease;
+          line-height: 1.4;
         }
 
-        .highlight-meta {
-          display: flex;
-          justify-content: space-between;
-          font-size: var(--font-size-sm);
-          color: var(--light-surface);
-          gap: var(--spacing-sm);
-          flex-wrap: wrap;
+        .highlight-item.expanded .highlight-text {
+          -webkit-line-clamp: unset;
         }
 
-       .highlight-meta span {
-         white-space: nowrap;
-       }
+        .toggle-expand {
+          background: none;
+          border: none;
+          color: var(--warning-color);
+          cursor: pointer;
+          font-size: 0.8em;
+          padding: 2px 3px;
+          margin-top: 5px;
+          display: block;
+          text-align: center;
+        }
 
-       .highlight-item hr {
-        border: none;
-        border-top: 1px solid #ccc;
-        margin: 0.8em 0;
-        width: 100%;
-        flex-basis: 100%;
-      }
+        .toggle-expand:hover {
+          opacity: 0.8;
+        }
+
+            .highlight-meta {
+              display: flex;
+              justify-content: space-between;
+              font-size: var(--font-size-sm);
+              color: var(--light-surface);
+              gap: var(--spacing-sm);
+              flex-wrap: wrap;
+            }
+
+           .highlight-meta span {
+             white-space: nowrap;
+           }
+
+           .highlight-item hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 0.8em 0;
+            width: 100%;
+            flex-basis: 100%;
+          }
     
          .highlight-id {
            font-weight: bold;
@@ -2507,7 +2534,11 @@ javascript: (() => {
                     <div class="highlight-content">
                         <div class="highlight-text">${this._escapeHtml(
                           highlight.text
-                        )}</div>
+                        )}</div>${
+            highlight.text.length > 100
+              ? '<button class="toggle-expand" aria-label="Toggle expand">▼</button>'
+              : ""
+          }
                         <hr>
                         <div class="highlight-meta">
                             <span class="highlight-id"># ${index + 1}</span>
@@ -2524,6 +2555,18 @@ javascript: (() => {
         .join("");
 
       // Adicionar event listeners
+
+      list.querySelectorAll(".toggle-expand").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const item = e.target.closest(".highlight-item");
+          item.classList.toggle("expanded");
+          e.target.textContent = item.classList.contains("expanded")
+            ? "▲"
+            : "▼";
+        });
+      });
+
       list.querySelectorAll(".highlight-item").forEach((item) => {
         const id = item.dataset.highlightId;
 
