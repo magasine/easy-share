@@ -2,8 +2,8 @@ javascript: (() => {
   // CONFIGURAÇÕES GLOBAIS COMPLETAS
   const CONFIG = {
     APP_INFO: {
-      name: "Easy Share ⚡",
-      version: "v20250709",
+      name: "Easy Share",
+      version: "v20250710",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -181,8 +181,9 @@ javascript: (() => {
         position: { top: "20px", right: "20px", left: "auto" },
         isDragging: false,
         dragOffset: { x: 0, y: 0 },
-        factCheckEnabled: true, // Novo estado para controle do checkbox
+        factCheckEnabled: true,
         factCheckService: "google-fact-check", // Serviço padrão
+        highlightLock: false,
       };
 
       // Cache de elementos DOM para melhor performance
@@ -372,6 +373,53 @@ javascript: (() => {
       this.elements.closeButton?.addEventListener("click", this._handleClose);
       this.elements.header?.addEventListener("mousedown", this._handleDrag);
 
+      // Listener para o botão de highlight
+      this.shadow
+        .getElementById("highlight-action-btn")
+        .addEventListener("click", () => {
+          // Bloqueio inicial (mantido da versão original)
+          if (this.highlightLock) return;
+
+          const selection = window.getSelection();
+
+          // Validação reforçada (nova)
+          if (selection.isCollapsed || !selection.toString().trim()) {
+            this._showFeedback(CONFIG.TEXTS.FEEDBACK.TEXT_EMPTY, "warning");
+
+            // Feedback visual no botão (novo)
+            const btn = this.shadow.getElementById("highlight-action-btn");
+            btn.classList.add("error-pulse");
+            setTimeout(() => btn.classList.remove("error-pulse"), 1000);
+            return;
+          }
+
+          // Lógica original (mantida com pequeno ajuste)
+          this.highlightLock = true;
+          this._createHighlight(selection.getRangeAt(0));
+
+          // Timeout de desbloqueio (mantido)
+          setTimeout(() => {
+            this.highlightLock = false;
+          }, 1000);
+        });
+
+      // Listener de tecla 'H' para desktop
+      document.addEventListener("keydown", (e) => {
+        if ((e.key === "h" || e.key === "H") && !this.highlightLock) {
+          const selection = window.getSelection();
+          if (!selection.isCollapsed) {
+            this.highlightLock = true; // Bloqueia novos destaques
+
+            this._createHighlight(selection.getRangeAt(0));
+
+            // Libera após 1s (tempo suficiente para evitar duplicação)
+            setTimeout(() => {
+              this.highlightLock = false;
+            }, 1000);
+          }
+        }
+      });
+
       // Toggle de tema
       this.elements.themeToggle?.addEventListener("click", () =>
         this._toggleTheme()
@@ -439,48 +487,66 @@ javascript: (() => {
 
     _createHighlight(range) {
       const text = range.toString().trim();
+      const btn = this.shadow.getElementById("highlight-action-btn");
 
-      // Validações melhoradas
-      if (!text) {
-        this._showFeedback(CONFIG.TEXTS.FEEDBACK.TEXT_EMPTY, "warning");
-        return;
-      }
+      // Bloqueio inicial (mantido)
+      if (this.state.highlightLock) return;
+      this.state.highlightLock = true;
+      btn.disabled = true;
+      btn.textContent = "⏳";
 
-      if (text.length > CONFIG.HIGHLIGHT.MAX_SELECTION_LENGTH) {
-        const message = CONFIG.TEXTS.FEEDBACK.TEXT_TOO_LONG.replace(
-          "{limit}",
-          CONFIG.HIGHLIGHT.MAX_SELECTION_LENGTH.toLocaleString()
-        );
-        this._showFeedback(message, "error");
-        return;
-      }
-
-      const rangeData = this._serializeRange(range);
-      if (!rangeData) {
-        this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_FAILED, "error");
-        return;
-      }
-
-      const highlight = {
-        id: `hl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        text,
-        url: location.href,
-        timestamp: Date.now(),
-        visible: true,
-        rangeData,
+      const cleanup = () => {
+        this.state.highlightLock = false;
+        btn.disabled = false;
+        btn.textContent = "⚡";
       };
 
-      this.state.highlights.set(highlight.id, highlight);
-
       try {
+        // Validações (mantidas)
+        if (!text) {
+          this._showFeedback(CONFIG.TEXTS.FEEDBACK.TEXT_EMPTY, "warning");
+          return;
+        }
+
+        if (text.length > CONFIG.HIGHLIGHT.MAX_SELECTION_LENGTH) {
+          const message = CONFIG.TEXTS.FEEDBACK.TEXT_TOO_LONG.replace(
+            "{limit}",
+            CONFIG.HIGHLIGHT.MAX_SELECTION_LENGTH.toLocaleString()
+          );
+          this._showFeedback(message, "error");
+          return;
+        }
+
+        const rangeData = this._serializeRange(range);
+        if (!rangeData) {
+          this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_FAILED, "error");
+          return;
+        }
+
+        // Modificação crítica aqui ▼ (novo destaque herda estado global)
+        const highlight = {
+          id: `hl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          text,
+          url: location.href,
+          timestamp: Date.now(),
+          visible: !this.state.hiddenHighlights, // Sincronizado com estado global ▲
+          rangeData,
+        };
+
+        // Aplicação do destaque (mantida)
         this._applyHighlight(range, highlight.id);
+        this.state.highlights.set(highlight.id, highlight);
+
+        // Atualizações adicionais (novas) ▼
+        this._updateHighlightVisualState(highlight.id); // Força atualização visual imediata
         this._saveHighlights();
         this._updateUI();
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_CREATED, "success");
       } catch (error) {
         console.error("Failed to create highlight:", error);
-        this.state.highlights.delete(highlight.id);
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_FAILED, "error");
+      } finally {
+        cleanup();
       }
     }
 
@@ -490,13 +556,10 @@ javascript: (() => {
       span.className = "unified-highlight";
       span.setAttribute("data-highlight-id", id);
       span.setAttribute("aria-label", "Highlighted Text - Click to Copy");
-      span.style.backgroundColor = this.state.hiddenHighlights
-        ? "transparent"
-        : CONFIG.HIGHLIGHT.COLORS[this.state.theme];
-      span.style.transition = `background-color ${CONFIG.UI.ANIMATION_DURATION}ms ease`;
-      span.style.cursor = "pointer";
 
-      // Adiciona o evento de clique para copiar
+      // Usar o método centralizado para definir o estilo inicial
+      this._updateHighlightVisualState(id); // ← Linha nova
+
       span.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -587,15 +650,16 @@ javascript: (() => {
 
       if (!element || !highlight) return;
 
-      const isSelected = this.state.selectedHighlights.has(highlight);
-      // Use highlight.visible para determinar a cor de fundo
-      const backgroundColor = highlight.visible
+      // Estado único de controle
+      const shouldShow = !this.state.hiddenHighlights && highlight.visible;
+
+      element.style.backgroundColor = shouldShow
         ? CONFIG.HIGHLIGHT.COLORS[this.state.theme]
         : "transparent";
 
-      element.style.backgroundColor = backgroundColor;
-      element.style.outline = isSelected ? "2px solid #007bff" : "none";
-      element.style.outlineOffset = "1px";
+      element.style.outline = this.state.selectedHighlights.has(highlight)
+        ? "2px solid #007bff"
+        : "none";
     }
 
     _restoreMissingHighlights() {
@@ -622,12 +686,9 @@ javascript: (() => {
     _toggleHighlightsVisibility() {
       this.state.hiddenHighlights = !this.state.hiddenHighlights;
 
-      this.state.highlights.forEach((highlight) => {
-        // Sincronizar o estado do destaque individual
-        highlight.visible = !this.state.hiddenHighlights;
-        this._updateHighlightVisualState(highlight.id);
-      });
-
+      this.state.highlights.forEach((_, id) =>
+        this._updateHighlightVisualState(id)
+      );
       this._saveSettings();
       this._updateUI();
 
@@ -1287,6 +1348,7 @@ javascript: (() => {
       <a class="app-version" href="${CONFIG.APP_INFO.versionUrl}" title="© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}" target="_blank" rel="noopener">${CONFIG.APP_INFO.version}</a>
     </div>
     <div class="header-controls">
+      <button id="highlight-action-btn" class="control-btn" aria-label="Criar destaque" title="Criar destaque (H)">⚡</button>
       <button id="theme-toggle" class="control-btn" aria-label="Toggle theme" title="Toggle theme">🌙</button>
       <button id="minimize-button" class="control-btn" aria-label="Minimize" title="Minimize">−</button>
       <button id="close-button" class="control-btn" aria-label="Close" title="Close">×</button>
@@ -1299,7 +1361,7 @@ javascript: (() => {
   Highlights List
 </button>
 <button id="tab-citation" class="tab-btn active" role="tab" aria-selected="false" aria-controls="citation-tab">
-  Load Citation
+  Citation Compose
 </button>
 </nav>
 
@@ -1326,7 +1388,7 @@ javascript: (() => {
     <div id="highlights-list" class="highlights-list" role="list"></div>
 
     <div class="highlights-help">
-      <small>Select text and use <kbd>Ctrl</kbd> + <kbd>Click</kbd> to highlight
+      <small>
       <br>Click on the highlight list to select and scroll
       </small>
     </div>
@@ -1617,6 +1679,10 @@ javascript: (() => {
           display: flex;
           gap: var(--spacing-xs);
           align-items: center;
+        }
+
+        #highlight-action-btn {
+          font-size: var(--font-size-lg);
         }
 
         /* ===== BOTÕES DE CONTROLE MELHORADOS ===== */
@@ -2208,17 +2274,17 @@ javascript: (() => {
           text-align: center;
           padding: var(--spacing-sm);
           /* background: var(--light-surface); */
-          border-radius: var(--border-radius-sm);
-          border: 1px solid var(--light-border);
+          border: none; /* 1px solid var(--light-border); */
+          /* border-radius: var(--border-radius-sm); */
         }
 
-        .highlights-help kbd {
-          background: var(--warning-color);
-          color: var(--primary-color);
+        kbd {
+          /* background: var(--warning-color); */
+          color: var(--warning-color);
           padding: 2px var(--spacing-xs);
           border-radius: 2px;
-          font-size: var(--font-size-xs);
-          font-weight: bold;
+          font-size: var(--font-size-sm);
+          /* font-weight: bold; */
           font-family: monospace;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
@@ -2279,7 +2345,10 @@ javascript: (() => {
           .unified-container {
             width: calc(100vw - 20px);
             max-width: calc(100vw - 20px);
+          #highlight-action-btn {
+            font-size: var(--font-size-xl);
           }
+        }
 
           .control-buttons {
             flex-direction: column;
@@ -2486,6 +2555,7 @@ javascript: (() => {
     }
 
     _updateHighlightsList() {
+      console.log("Highlights no estado:", this.state.highlights); // Debug
       const list = this.elements.highlightsList;
       if (!list) return;
 
@@ -2512,7 +2582,7 @@ javascript: (() => {
                 <small>${
                   this.state.searchQuery
                     ? "Try a different search term"
-                    : "Select text and press Ctrl+Click to create highlights"
+                    : "To highlight, select the text and<br>type <kbd>H</kbd>, or press ⚡ on top"
                 }</small>
             </div>
         `;
@@ -2541,7 +2611,7 @@ javascript: (() => {
           }
                         <hr>
                         <div class="highlight-meta">
-                            <span class="highlight-id"># ${index + 1}</span>
+                            <span class="highlight-id">⚡ ${index + 1}</span>
                             <span class="highlight-date">${dateStr}</span>
                             <span class="highlight-length">${
                               highlight.text.length
