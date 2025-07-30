@@ -2826,11 +2826,12 @@ javascript: (() => {
     }
 
     _formatHTML(texts, title, url) {
-      let content = `<h3>${title}</h3>`;
+      let content = `<h2>${title}</h2>`;
       content += `<ul>`;
       content += texts.map((t) => `<li>${t}</li>`).join("");
       content += `</ul>`;
-      content += `<p>- Source: <a href="${url}" target="_blank">${url}</a></p>`;
+      // content += `</br>`;
+      content += `- Source: <a href="${url}" target="_blank">${url}</a>`;
       return content;
     }
 
