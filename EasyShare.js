@@ -3,7 +3,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share",
-      version: "v20250710",
+      version: "v20250730",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -3238,3 +3238,4 @@ javascript: (() => {
     new UnifiedTool();
   }
 })();
+
