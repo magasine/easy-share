@@ -3,7 +3,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share",
-      version: "v20250730",
+      version: "v20250813",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -534,6 +534,7 @@ javascript: (() => {
         };
 
         // Aplicação do destaque (mantida)
+         this.state.selectedHighlights.add(highlight); // Assegura que o destaque esteja selecionado
         this._applyHighlight(range, highlight.id);
         this.state.highlights.set(highlight.id, highlight);
 
@@ -2830,7 +2831,7 @@ javascript: (() => {
       content += `<ul>`;
       content += texts.map((t) => `<li>${t}</li>`).join("");
       content += `</ul>`;
-      // content += `</br>`;
+      content += `</br>`;
       content += `- Source: <a href="${url}" target="_blank">${url}</a>`;
       return content;
     }
@@ -3238,4 +3239,3 @@ javascript: (() => {
     new UnifiedTool();
   }
 })();
-
