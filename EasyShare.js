@@ -3,7 +3,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share",
-      version: "v20250813",
+      version: "v20250814",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -534,7 +534,7 @@ javascript: (() => {
         };
 
         // Aplicação do destaque (mantida)
-         this.state.selectedHighlights.add(highlight); // Assegura que o destaque esteja selecionado
+        this.state.selectedHighlights.add(highlight); // Assegura que o destaque esteja selecionado
         this._applyHighlight(range, highlight.id);
         this.state.highlights.set(highlight.id, highlight);
 
@@ -543,6 +543,10 @@ javascript: (() => {
         this._saveHighlights();
         this._updateUI();
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_CREATED, "success");
+        // Se o usuário estiver na aba de citação, mude para a de destaques.
+        if (this.state.activeTab === "citation") {
+          this._switchTab("highlights");
+        }
       } catch (error) {
         console.error("Failed to create highlight:", error);
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_FAILED, "error");
