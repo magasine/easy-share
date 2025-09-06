@@ -1,9 +1,30 @@
 javascript: (() => {
+  const prepareTextForFactCheck = (text) => {
+    if (!text) return "pesquisa";
+
+    const h1Element = document.querySelector("h1");
+    let finalQuery = text; // Padrão: usa o título completo
+
+    // Se houver um <h1> no documento, e seu texto for de um tamanho razoável,
+    // use-o como a consulta de busca. Isso é mais confiável do que o título da página.
+    if (h1Element && h1Element.textContent.trim().length > 15) {
+      finalQuery = h1Element.textContent;
+    }
+
+    // Aplica a limpeza final (remove caracteres especiais e espaços extras)
+    // e limita a 70 caracteres para garantir que a consulta seja válida para os serviços.
+    return finalQuery
+      .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .substring(0, 70)
+      .trim();
+  };
+
   // CONFIGURAÇÕES GLOBAIS COMPLETAS
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share",
-      version: "v20250814",
+      version: "v20250905",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -84,20 +105,45 @@ javascript: (() => {
         "main",
       ],
     },
+    // FACT_CHECK_SERVICES: [
+    //   {
+    //     name: "Google Fact Check",
+    //     value: "google-fact-check",
+    //     url: (text) => {
+    //       const prepareText = (t) => {
+    //         if (!t) return "";
+    //         return t
+    //           .substring(0, 70)
+    //           .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "")
+    //           .replace(/\s{2,}/g, " ")
+    //           .trim();
+    //       };
+    //       const query = prepareText(text) || "pesquisa";
+    //       return `https://toolbox.google.com/factcheck/explorer/search/${encodeURIComponent(
+    //         query
+    //       )}?hl=pt`;
+    //     },
+    //   },
+    //   {
+    //     name: "Aos Fatos (Brasil)",
+    //     value: "aos-fatos",
+    //     url: (text) =>
+    //       `https://www.aosfatos.org/noticias/?q=${encodeURIComponent(text)}`,
+    //   },
+    //   {
+    //     name: "Lupa (Brasil)",
+    //     value: "lupa",
+    //     url: (text) =>
+    //       `https://lupa.uol.com.br/busca/${encodeURIComponent(text)}`,
+    //   },
+    // ],
     FACT_CHECK_SERVICES: [
       {
         name: "Google Fact Check",
         value: "google-fact-check",
-        url: (text) => {
-          const prepareText = (t) => {
-            if (!t) return "";
-            return t
-              .substring(0, 70)
-              .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "")
-              .replace(/\s{2,}/g, " ")
-              .trim();
-          };
-          const query = prepareText(text) || "pesquisa";
+        url: () => {
+          // Usa o título da página com os refinamentos
+          const query = prepareTextForFactCheck(document.title);
           return `https://toolbox.google.com/factcheck/explorer/search/${encodeURIComponent(
             query
           )}?hl=pt`;
@@ -106,24 +152,29 @@ javascript: (() => {
       {
         name: "Aos Fatos (Brasil)",
         value: "aos-fatos",
-        url: (text) =>
-          `https://www.aosfatos.org/noticias/?q=${encodeURIComponent(text)}`,
+        url: () => {
+          // Usa o título da página com os refinamentos
+          const query = prepareTextForFactCheck(document.title);
+          return `https://www.aosfatos.org/noticias/?q=${encodeURIComponent(
+            query
+          )}`;
+        },
       },
       {
         name: "Lupa (Brasil)",
         value: "lupa",
-        url: (text) =>
-          `https://lupa.uol.com.br/busca/${encodeURIComponent(text)}`, // TODO publicar em nova versão
-        // `https://piaui.folha.uol.com.br/lupa/busca/?q=${encodeURIComponent(
-        //   text
-        // )}`, // Url descontinuado
+        url: () => {
+          // Usa o título da página com os refinamentos
+          const query = prepareTextForFactCheck(document.title);
+          return `https://lupa.uol.com.br/busca/${encodeURIComponent(query)}`;
+        },
       },
     ],
     UI: {
       ANIMATION_DURATION: 200,
       FEEDBACK_DURATION: 1000,
       DEBOUNCE_DELAY: 300,
-      MAX_WIDTH: 350, // Largura máxima garantida
+      MAX_WIDTH: 350,
     },
   };
 
@@ -147,7 +198,6 @@ javascript: (() => {
     }
 
     _bindMethods() {
-      // Bind de métodos que são usados como event listeners
       this._moveHighlightUp = this._moveHighlightUp.bind(this);
       this._moveHighlightDown = this._moveHighlightDown.bind(this);
       this._handleMouseUp = this._handleMouseUp.bind(this);
@@ -155,12 +205,58 @@ javascript: (() => {
       this._handleThemeChange = this._handleThemeChange.bind(this);
       this._toggleMinimize = this._toggleMinimize.bind(this);
       this._handleClose = this._handleClose.bind(this);
-      this._handleDrag = this._handleDrag.bind(this);
       this._toggleSortOrder = this._toggleSortOrder.bind(this);
       this._debouncedSearch = this._debounce(
         this._handleSearch.bind(this),
         CONFIG.UI.DEBOUNCE_DELAY
       );
+
+      // Novos métodos para sistema de marcações robusto
+      this._restoreMissingHighlights =
+        this._restoreMissingHighlights.bind(this);
+      this._scheduleHighlightRestore =
+        this._scheduleHighlightRestore.bind(this);
+      this._serializeRange = this._serializeRange.bind(this);
+      this._deserializeRange = this._deserializeRange.bind(this);
+      this._getNodePath = this._getNodePath.bind(this);
+      this._getNodeByPath = this._getNodeByPath.bind(this);
+      this._findTextNodesForRange = this._findTextNodesForRange.bind(this);
+      this._findAndHighlightText = this._findAndHighlightText.bind(this);
+      this._getStableParentInfo = this._getStableParentInfo.bind(this);
+      this._findTextStartIndex = this._findTextStartIndex.bind(this);
+      this._copyHighlightText = this._copyHighlightText.bind(this);
+      this._toggleHighlightSelection =
+        this._toggleHighlightSelection.bind(this);
+      this._scrollToHighlight = this._scrollToHighlight.bind(this);
+      this._updateHighlightsSelectedButton =
+        this._updateHighlightsSelectedButton.bind(this);
+      this._updateHideToggleText = this._updateHideToggleText.bind(this);
+      this._updateHighlightsCounter = this._updateHighlightsCounter.bind(this);
+      this._updateHighlightsList = this._updateHighlightsList.bind(this);
+      this._formatDate = this._formatDate.bind(this);
+      this._escapeHtml = this._escapeHtml.bind(this);
+      this._updateCitation = this._updateCitation.bind(this);
+      this._formatContent = this._formatContent.bind(this);
+      this._formatWhatsApp = this._formatWhatsApp.bind(this);
+      this._formatAcademic = this._formatAcademic.bind(this);
+      this._formatHTML = this._formatHTML.bind(this);
+      this._formatMarkdown = this._formatMarkdown.bind(this);
+      this._formatTwitter = this._formatTwitter.bind(this);
+      this._formatPlain = this._formatPlain.bind(this);
+      this._getActionContent = this._getActionContent.bind(this);
+      this._copyContent = this._copyContent.bind(this);
+      this._shareContent = this._shareContent.bind(this);
+      this._sendEmail = this._sendEmail.bind(this);
+      this._downloadContent = this._downloadContent.bind(this);
+      this._setCitationMode = this._setCitationMode.bind(this);
+      this._toggleReadability = this._toggleReadability.bind(this);
+      this._toggleFactCheck = this._toggleFactCheck.bind(this);
+      this._openReadability = this._openReadability.bind(this);
+      this._openFactCheck = this._openFactCheck.bind(this);
+      this._prepareFactCheckText = this._prepareFactCheckText.bind(this);
+      this._switchTab = this._switchTab.bind(this);
+      this._updateThemeToggleIcon = this._updateThemeToggleIcon.bind(this);
+      this._showFeedback = this._showFeedback.bind(this);
     }
 
     _initializeState() {
@@ -179,12 +275,13 @@ javascript: (() => {
         clipboardError: null,
         clipboardPermission: "prompt",
         position: { top: "20px", right: "20px", left: "auto" },
-        isDragging: false,
-        dragOffset: { x: 0, y: 0 },
         factCheckEnabled: true,
-        factCheckService: "google-fact-check", // Serviço padrão
+        factCheckService: "google-fact-check",
         highlightLock: false,
       };
+
+      // Novo: Fila de restauração para highlights
+      this.restoreQueue = new Map();
 
       // Cache de elementos DOM para melhor performance
       this.elements = {};
@@ -252,7 +349,6 @@ javascript: (() => {
     }
 
     _cacheElements() {
-      // Cache de elementos para melhor performance
       const shadowRoot = this.shadow;
       this.elements = {
         container: shadowRoot.querySelector(".unified-container"),
@@ -302,9 +398,10 @@ javascript: (() => {
 
       select.innerHTML = options
         .map(
-          (option) => `
-          <option value="${option.value}">${option.text || option.name}</option>
-        `
+          (option) =>
+            `<option value="${option.value}">${
+              option.text || option.name
+            }</option>`
         )
         .join("");
     }
@@ -371,54 +468,56 @@ javascript: (() => {
         this._toggleMinimize
       );
       this.elements.closeButton?.addEventListener("click", this._handleClose);
-      this.elements.header?.addEventListener("mousedown", this._handleDrag);
 
       // Listener para o botão de highlight
       this.shadow
         .getElementById("highlight-action-btn")
         .addEventListener("click", () => {
-          // Bloqueio inicial (mantido da versão original)
           if (this.highlightLock) return;
 
           const selection = window.getSelection();
 
-          // Validação reforçada (nova)
           if (selection.isCollapsed || !selection.toString().trim()) {
             this._showFeedback(CONFIG.TEXTS.FEEDBACK.TEXT_EMPTY, "warning");
 
-            // Feedback visual no botão (novo)
             const btn = this.shadow.getElementById("highlight-action-btn");
             btn.classList.add("error-pulse");
             setTimeout(() => btn.classList.remove("error-pulse"), 1000);
             return;
           }
 
-          // Lógica original (mantida com pequeno ajuste)
           this.highlightLock = true;
           this._createHighlight(selection.getRangeAt(0));
 
-          // Timeout de desbloqueio (mantido)
           setTimeout(() => {
             this.highlightLock = false;
           }, 1000);
         });
 
-      // Listener de tecla 'H' para desktop
-      document.addEventListener("keydown", (e) => {
+      // Função nomeada para o listener da tecla H
+      const handleHighlightHotkey = (e) => {
         if ((e.key === "h" || e.key === "H") && !this.highlightLock) {
           const selection = window.getSelection();
-          if (!selection.isCollapsed) {
-            this.highlightLock = true; // Bloqueia novos destaques
 
+          if (!selection.isCollapsed) {
+            this.highlightLock = true;
             this._createHighlight(selection.getRangeAt(0));
 
-            // Libera após 1s (tempo suficiente para evitar duplicação)
+            // Remova o listener após a criação do destaque
+            document.removeEventListener("keydown", handleHighlightHotkey);
+
+            // Temporizador para reativar o listener após um breve período de tempo, se necessário
             setTimeout(() => {
               this.highlightLock = false;
-            }, 1000);
+              // Adiciona o listener de volta
+              document.addEventListener("keydown", handleHighlightHotkey);
+            }, 2000);
           }
         }
-      });
+      };
+
+      // Adicione o listener de tecla 'H' para desktop, usando a função nomeada
+      document.addEventListener("keydown", handleHighlightHotkey);
 
       // Toggle de tema
       this.elements.themeToggle?.addEventListener("click", () =>
@@ -438,6 +537,7 @@ javascript: (() => {
       this.elements.moveDown?.addEventListener("click", () =>
         this._moveHighlightDown()
       );
+
       // Controles de fact-checking
       this.elements.factCheckCheck?.addEventListener("change", () =>
         this._toggleFactCheck()
@@ -451,16 +551,17 @@ javascript: (() => {
     }
 
     _setupObservers() {
-      // Observer para mudanças no DOM (restaurar destaques perdidos)
+      // Observer para mudanças no DOM (restaurar destaques perdidos) - MELHORADO
       this.observer = new MutationObserver((mutations) => {
         if (this.isDestroyed) return;
 
         mutations.forEach((mutation) => {
-          if (mutation.type === "childList") {
+          if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
             this._restoreMissingHighlights();
           }
         });
       });
+
       this.observer.observe(document.body, { childList: true, subtree: true });
 
       // Observer para mudanças de tema do sistema
@@ -469,7 +570,7 @@ javascript: (() => {
     }
 
     // ======================
-    // FUNCIONALIDADES PRINCIPAIS
+    // FUNCIONALIDADES PRINCIPAIS (MARCAÇÕES)
     // ======================
 
     _handleMouseUp(e) {
@@ -489,7 +590,7 @@ javascript: (() => {
       const text = range.toString().trim();
       const btn = this.shadow.getElementById("highlight-action-btn");
 
-      // Bloqueio inicial (mantido)
+      // Bloqueio inicial
       if (this.state.highlightLock) return;
       this.state.highlightLock = true;
       btn.disabled = true;
@@ -502,10 +603,10 @@ javascript: (() => {
       };
 
       try {
-        // Validações (mantidas)
+        // Validações existentes
         if (!text) {
           this._showFeedback(CONFIG.TEXTS.FEEDBACK.TEXT_EMPTY, "warning");
-          return;
+          return cleanup();
         }
 
         if (text.length > CONFIG.HIGHLIGHT.MAX_SELECTION_LENGTH) {
@@ -514,36 +615,50 @@ javascript: (() => {
             CONFIG.HIGHLIGHT.MAX_SELECTION_LENGTH.toLocaleString()
           );
           this._showFeedback(message, "error");
-          return;
+          return cleanup();
         }
+
+        // ▼ NOVA VALIDAÇÃO: Impede a seleção de múltiplos parágrafos ▼
+        const startParent = range.startContainer.parentNode;
+        const endParent = range.endContainer.parentNode;
+
+        // Verifica se os pais dos nós de início e fim da seleção são diferentes
+        // Isso indica que a seleção atravessa limites de elementos de bloco (p.ex., parágrafos)
+        if (startParent !== endParent) {
+          this._showFeedback(
+            "❌ Please select text within a single paragraph.",
+            "error"
+          );
+          return cleanup();
+        }
+        // ▲ Fim da nova validação ▲
 
         const rangeData = this._serializeRange(range);
         if (!rangeData) {
           this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_FAILED, "error");
-          return;
+          return cleanup();
         }
 
-        // Modificação crítica aqui ▼ (novo destaque herda estado global)
+        // Modificação crítica (mantida)
         const highlight = {
           id: `hl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           text,
           url: location.href,
           timestamp: Date.now(),
-          visible: !this.state.hiddenHighlights, // Sincronizado com estado global ▲
+          visible: !this.state.hiddenHighlights,
           rangeData,
         };
 
-        // Aplicação do destaque (mantida)
-        this.state.selectedHighlights.add(highlight); // Assegura que o destaque esteja selecionado
+        // Aplicação do destaque
+        this.state.selectedHighlights.add(highlight);
         this._applyHighlight(range, highlight.id);
         this.state.highlights.set(highlight.id, highlight);
 
-        // Atualizações adicionais (novas) ▼
-        this._updateHighlightVisualState(highlight.id); // Força atualização visual imediata
+        // Atualizações adicionais (mantidas)
+        this._updateHighlightVisualState(highlight.id);
         this._saveHighlights();
         this._updateUI();
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.HIGHLIGHT_CREATED, "success");
-        // Se o usuário estiver na aba de citação, mude para a de destaques.
         if (this.state.activeTab === "citation") {
           this._switchTab("highlights");
         }
@@ -562,8 +677,7 @@ javascript: (() => {
       span.setAttribute("data-highlight-id", id);
       span.setAttribute("aria-label", "Highlighted Text - Click to Copy");
 
-      // Usar o método centralizado para definir o estilo inicial
-      this._updateHighlightVisualState(id); // ← Linha nova
+      this._updateHighlightVisualState(id);
 
       span.addEventListener("click", (e) => {
         e.preventDefault();
@@ -575,7 +689,10 @@ javascript: (() => {
         range.surroundContents(span);
       } catch (error) {
         console.warn("Failed to apply highlight:", error);
-        throw error;
+        // Fallback: inserir manualmente
+        span.textContent = range.toString();
+        range.deleteContents();
+        range.insertNode(span);
       }
     }
 
@@ -606,7 +723,12 @@ javascript: (() => {
       }
     }
 
+    // ======================
+    // PREVENÇÃO SIMPLES DE MÚLTIPLAS SELEÇÕES
+    // ======================
+
     _toggleHighlightSelection(highlightId) {
+      // Método original simples - apenas alterna a seleção
       const highlight = this.state.highlights.get(highlightId);
       if (!highlight) return;
 
@@ -622,9 +744,16 @@ javascript: (() => {
       this._saveSettings();
     }
 
+    // ======================
+    // CORREÇÃO DA ROLAGEM ATÉ MARCAÇÃO
+    // ======================
+
     _scrollToHighlight(id) {
       const highlightElement = document.getElementById(id);
-      if (!highlightElement) return;
+      if (!highlightElement) {
+        console.warn(`Highlight element with id ${id} not found`);
+        return;
+      }
 
       // Salvar o estilo original para restaurar depois
       const originalBackground = highlightElement.style.backgroundColor;
@@ -635,7 +764,7 @@ javascript: (() => {
         CONFIG.HIGHLIGHT.COLORS.success || "#28a745";
       highlightElement.style.transition = "background-color 0.5s ease";
 
-      // Rolagem suave para o elemento
+      // Rolagem suave para o elemento - CORRIGIDO: comportamento melhorado
       highlightElement.scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -644,8 +773,10 @@ javascript: (() => {
 
       // Restaurar estilo original após a animação
       setTimeout(() => {
-        highlightElement.style.backgroundColor = originalBackground;
-        highlightElement.style.transition = originalTransition;
+        if (highlightElement && highlightElement.style) {
+          highlightElement.style.backgroundColor = originalBackground;
+          highlightElement.style.transition = originalTransition;
+        }
       }, 1000);
     }
 
@@ -667,26 +798,325 @@ javascript: (() => {
         : "none";
     }
 
+    // NOVO: Sistema de restauração robusto
     _restoreMissingHighlights() {
       if (this.isDestroyed) return;
 
+      // Verifica se há highlights no estado que não estão no DOM
       this.state.highlights.forEach((highlight) => {
         if (!document.getElementById(highlight.id)) {
-          this._restoreHighlight(highlight);
+          this._scheduleHighlightRestore(highlight.id);
         }
       });
     }
 
-    _restoreHighlight(highlight) {
-      const range = this._deserializeRange(highlight.rangeData);
-      if (!range) return;
-
-      try {
-        this._applyHighlight(range, highlight.id);
-      } catch (error) {
-        console.warn("Failed to restore highlight:", error);
+    _scheduleHighlightRestore(id) {
+      if (!this.restoreQueue.has(id)) {
+        this.restoreQueue.set(
+          id,
+          setTimeout(() => {
+            const highlight = this.state.highlights.get(id);
+            if (highlight) {
+              const success = this._restoreHighlight(highlight);
+              if (!success) {
+                console.warn(`Failed to restore highlight ${id} after retry`);
+                // Não remove do estado, apenas marca como não restaurado
+                highlight.restorationFailed = true;
+              }
+            }
+            this.restoreQueue.delete(id);
+          }, 500) // Reduzido para 500ms para resposta mais rápida
+        );
       }
     }
+
+    _restoreHighlight(highlightId, highlightData) {
+      try {
+        if (
+          !highlightData ||
+          !highlightData.startContainerPath ||
+          !highlightData.endContainerPath
+        ) {
+          // Mensagem de aviso mais clara
+          console.warn(
+            `Highlight data for highlightId: ${highlightId} is incomplete or corrupted. Skipping restoration.`
+          );
+          return;
+        }
+
+        const range = this._deserializeRange(highlightData);
+        if (range) {
+          const highlighter = new Rangy.ClassApplier("highlight", {
+            tagNames: ["span", "em", "i", "b"],
+            elementAttributes: {
+              "data-highlight-id": highlightId,
+            },
+          });
+          highlighter.applyToRange(range);
+        } else {
+          console.warn(
+            `Failed to deserialize range for highlight ${highlightId}.`
+          );
+        }
+      } catch (error) {
+        console.warn(`Failed to restore highlight ${highlightId} after retry.`);
+      }
+    }
+
+    _findAndHighlightText(
+      parentEl,
+      textToFind,
+      initialOffset,
+      highlightId,
+      isVisible = true
+    ) {
+      const fullText = parentEl.textContent;
+      let foundIndex = fullText.indexOf(textToFind, initialOffset);
+
+      if (foundIndex === -1) {
+        foundIndex = fullText.indexOf(textToFind);
+      }
+
+      if (foundIndex === -1) {
+        console.warn(`Text '${textToFind}' not found in parent element`);
+        return false;
+      }
+
+      const range = document.createRange();
+      const nodes = this._findTextNodesForRange(
+        parentEl,
+        foundIndex,
+        textToFind.length
+      );
+
+      if (nodes.startNode && nodes.endNode) {
+        const span = document.createElement("span");
+        span.id = highlightId;
+        span.className = "unified-highlight";
+        span.setAttribute("data-highlight-id", highlightId);
+
+        this._updateHighlightVisualState(highlightId);
+
+        span.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this._copyHighlightText(highlightId);
+        });
+
+        try {
+          range.setStart(nodes.startNode, nodes.startOffset);
+          range.setEnd(nodes.endNode, nodes.endOffset);
+          range.surroundContents(span);
+          return true;
+        } catch (err) {
+          console.error(`Error restoring highlight ${highlightId}:`, err);
+          // Fallback
+          span.textContent = textToFind;
+          range.deleteContents();
+          range.insertNode(span);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    _findTextNodesForRange(parentEl, startIndex, length) {
+      const range = document.createRange();
+      let currentOffset = 0;
+      let startNode = null,
+        endNode = null;
+      let startOffset = 0,
+        endOffset = 0;
+
+      const walker = document.createTreeWalker(parentEl, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (node) {
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+
+      let node;
+      while ((node = walker.nextNode())) {
+        const nodeLength = node.length;
+
+        if (startNode === null && currentOffset + nodeLength > startIndex) {
+          startNode = node;
+          startOffset = startIndex - currentOffset;
+        }
+
+        if (
+          endNode === null &&
+          currentOffset + nodeLength >= startIndex + length
+        ) {
+          endNode = node;
+          endOffset = startIndex + length - currentOffset;
+          break;
+        }
+        currentOffset += nodeLength;
+      }
+
+      return { startNode, startOffset, endNode, endOffset };
+    }
+
+    // ======================
+    // SERIALIZAÇÃO DE RANGE (MELHORADA)
+    // ======================
+
+    // ======================
+    // SISTEMA DE SERIALIZAÇÃO CORRIGIDO
+    // ======================
+
+    _serializeRange(range) {
+      try {
+        const startContainer = range.startContainer;
+        const endContainer = range.endContainer;
+
+        // Obter informações do elemento pai estável para melhor recuperação
+        const stableParentInfo = this._getStableParentInfo(
+          range.commonAncestorContainer
+        );
+
+        return {
+          startContainerPath: this._getNodePath(startContainer),
+          startOffset: range.startOffset,
+          endContainerPath: this._getNodePath(endContainer),
+          endOffset: range.endOffset,
+          text: range.toString(),
+          stableParentSelector: stableParentInfo.selector,
+          parentTextContent: stableParentInfo.element.textContent,
+          timestamp: Date.now(),
+        };
+      } catch (error) {
+        console.error("Failed to serialize range:", error);
+        return null;
+      }
+    }
+
+    _deserializeRange(rangeData) {
+      try {
+        const startContainer = this._getNodeByPath(
+          rangeData.startContainerPath
+        );
+        const endContainer = this._getNodeByPath(rangeData.endContainerPath);
+
+        // Verificação de segurança: Se os nós não puderem ser encontrados, retorne null.
+        if (!startContainer || !endContainer) return null;
+
+        const range = document.createRange();
+
+        // Lógica de correção para o IndexSizeError
+        let endOffset = rangeData.endOffset;
+        if (
+          endContainer.nodeType === Node.TEXT_NODE &&
+          endContainer.length === 0
+        ) {
+          endOffset = 0;
+        }
+
+        range.setStart(startContainer, rangeData.startOffset);
+        range.setEnd(endContainer, endOffset);
+
+        // Verificar se o texto ainda corresponde (melhora a resiliência)
+        if (range.toString() !== rangeData.text) {
+          return null;
+        }
+
+        return range;
+      } catch (error) {
+        console.error("Failed to deserialize range:", error);
+        return null;
+      }
+    }
+
+    _findTextRange(parentElement, textToFind, initialOffset = 0) {
+      const fullText = parentElement.textContent;
+      let foundIndex = fullText.indexOf(textToFind, initialOffset);
+
+      if (foundIndex === -1) {
+        // Tenta encontrar em qualquer posição
+        foundIndex = fullText.indexOf(textToFind);
+      }
+
+      if (foundIndex === -1) {
+        console.warn(`Text '${textToFind}' not found in parent element`);
+        return null;
+      }
+
+      const range = document.createRange();
+      const nodes = this._findTextNodesForRange(
+        parentElement,
+        foundIndex,
+        textToFind.length
+      );
+
+      if (nodes.startNode && nodes.endNode) {
+        range.setStart(nodes.startNode, nodes.startOffset);
+        range.setEnd(nodes.endNode, nodes.endOffset);
+        return range;
+      }
+
+      return null;
+    }
+
+    _getNodePath(node) {
+      const path = [];
+      let current = node;
+      let depth = 0;
+      const maxDepth = 15; // Limite de profundidade para evitar loops infinitos
+
+      while (current && current !== document.body && depth < maxDepth) {
+        if (current.parentNode) {
+          const siblings = Array.from(current.parentNode.childNodes);
+          const index = siblings.indexOf(current);
+
+          if (index !== -1) {
+            path.unshift({
+              tagName: current.nodeName,
+              index: index,
+              nodeType: current.nodeType,
+              nodeName: current.nodeName,
+            });
+          }
+        }
+        current = current.parentNode;
+        depth++;
+      }
+
+      return path;
+    }
+
+    _getNodeByPath(path) {
+      let current = document.body;
+
+      for (const step of path) {
+        if (
+          !current ||
+          !current.childNodes ||
+          step.index >= current.childNodes.length
+        ) {
+          return null;
+        }
+
+        const child = current.childNodes[step.index];
+
+        // Verificação mais flexível para compatibilidade
+        if (!child || child.nodeType !== step.nodeType) {
+          return null;
+        }
+
+        // Verifica se a tag name corresponde (mais tolerante a mudanças)
+        if (step.tagName && child.nodeName !== step.tagName) {
+          return null;
+        }
+
+        current = child;
+      }
+
+      return current;
+    }
+
+    // ======================
+    // GERENCIAMENTO DE VISUALIZAÇÃO
+    // ======================
 
     _toggleHighlightsVisibility() {
       this.state.hiddenHighlights = !this.state.hiddenHighlights;
@@ -707,6 +1137,10 @@ javascript: (() => {
       if (!confirm(CONFIG.TEXTS.FEEDBACK.CONFIRM_CLEAR_HIGHLIGHTS)) {
         return;
       }
+
+      // Limpar fila de restauração
+      this.restoreQueue.forEach(clearTimeout);
+      this.restoreQueue.clear();
 
       // Remover elementos do DOM
       this.state.highlights.forEach((highlight) => {
@@ -730,14 +1164,828 @@ javascript: (() => {
       this._showFeedback("All highlights have been removed", "info");
     }
 
+    _deleteHighlight(id) {
+      const highlight = this.state.highlights.get(id);
+      if (!highlight) return;
+
+      // Remover da fila de restauração
+      if (this.restoreQueue.has(id)) {
+        clearTimeout(this.restoreQueue.get(id));
+        this.restoreQueue.delete(id);
+      }
+
+      // Remover do DOM
+      const element = document.getElementById(id);
+      if (element) {
+        const parent = element.parentNode;
+        while (element.firstChild) {
+          parent.insertBefore(element.firstChild, element);
+        }
+        parent.removeChild(element);
+      }
+
+      // Remover do estado
+      this.state.highlights.delete(id);
+      this.state.selectedHighlights.delete(highlight);
+
+      this._saveHighlights();
+      this._updateHighlightsSelectedButton();
+      this._updateUI();
+      this._showFeedback("Highlight removed", "info");
+    }
+
     // ======================
-    // NAVEGAÇÃO E UI
+    // PERSISTÊNCIA DE DADOS (ATUALIZADA)
     // ======================
+
+    _saveHighlights() {
+      try {
+        const highlights = Array.from(this.state.highlights.entries());
+        const selected = Array.from(this.state.selectedHighlights).map(
+          (h) => h.id
+        );
+
+        localStorage.setItem(
+          "unifiedTool_highlights",
+          JSON.stringify({
+            highlights,
+            selected,
+            url: location.href,
+            savedAt: Date.now(),
+          })
+        );
+      } catch (error) {
+        console.warn("Failed to save highlights:", error);
+
+        if (error.name === "QuotaExceededError") {
+          this._handleStorageQuotaExceeded();
+        }
+      }
+    }
+
+    _handleStorageQuotaExceeded() {
+      try {
+        // Ordena highlights por timestamp (mais antigos primeiro)
+        const highlightsArray = Array.from(this.state.highlights.values()).sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+
+        // Mantém apenas os 50% mais recentes
+        const keepCount = Math.floor(highlightsArray.length / 2);
+        const newData = highlightsArray.slice(-keepCount);
+
+        this.state.highlights = new Map(newData.map((item) => [item.id, item]));
+        this._saveHighlights();
+
+        this._showFeedback(
+          "Storage limit exceeded. Oldest highlights removed.",
+          "warning"
+        );
+      } catch (error) {
+        console.error("Failed to handle storage quota:", error);
+      }
+    }
+
+    _loadHighlights() {
+      try {
+        const saved = localStorage.getItem("unifiedTool_highlights");
+        if (saved) {
+          const data = JSON.parse(saved);
+
+          // Verifica se os dados são da URL atual
+          if (data.url === location.href && data.highlights) {
+            // Converte o array de volta para Map
+            this.state.highlights = new Map(data.highlights);
+
+            // Restaura seleções
+            if (data.selected) {
+              data.selected.forEach((id) => {
+                const highlight = this.state.highlights.get(id);
+                if (highlight) {
+                  this.state.selectedHighlights.add(highlight);
+                }
+              });
+            }
+
+            // Agenda restauração mas não espera por ela para atualizar UI
+            this.state.highlights.forEach((highlight) => {
+              this._scheduleHighlightRestore(highlight.id);
+            });
+
+            // Atualiza UI imediatamente
+            this._updateUI();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load highlights:", error);
+        // Limpa dados corrompidos
+        localStorage.removeItem("unifiedTool_highlights");
+      }
+    }
+
+    // ======================
+    // LIMPEZA E DESTRUIÇÃO (ATUALIZADA)
+    // ======================
+
+    destroy() {
+      if (this.isDestroyed) return;
+
+      this.isDestroyed = true;
+
+      // Limpar fila de restauração
+      this.restoreQueue.forEach(clearTimeout);
+      this.restoreQueue.clear();
+
+      // Remover event listeners globais
+      document.removeEventListener("mouseup", this._handleMouseUp);
+      window.removeEventListener("beforeunload", this._handleBeforeUnload);
+
+      // Parar observers
+      if (this.observer) {
+        this.observer.disconnect();
+      }
+
+      if (this.themeObserver) {
+        this.themeObserver.removeEventListener(
+          "change",
+          this._handleThemeChange
+        );
+      }
+
+      // Remover elementos DOM
+      if (this.host && this.host.parentNode) {
+        this.host.parentNode.removeChild(this.host);
+      }
+
+      if (this.globalStyle && this.globalStyle.parentNode) {
+        this.globalStyle.parentNode.removeChild(this.globalStyle);
+      }
+
+      // Limpar referências
+      delete window.unifiedCitationHighlighterInstance;
+
+      console.log("UnifiedTool destroyed successfully");
+    }
+
+    // ======================
+    // MÉTODOS ORIGINAIS (MANTIDOS)
+    // ======================
+
+    _getStableParentInfo(node) {
+      let current = node;
+      let depth = 0;
+      const maxDepth = 10; // Limite de profundidade para busca
+
+      while (current && current !== document.body && depth < maxDepth) {
+        // Prefere elementos com ID
+        if (current.id) {
+          return {
+            selector: `#${current.id}`,
+            element: current,
+          };
+        }
+
+        // Se não tem ID, tenta usar classes únicas
+        if (current.classList && current.classList.length > 0) {
+          const classSelector = Array.from(current.classList)
+            .map((cls) => `.${cls}`)
+            .join("");
+
+          // Verifica se o seletor é único
+          const elements = document.querySelectorAll(classSelector);
+          if (elements.length === 1) {
+            return {
+              selector: classSelector,
+              element: current,
+            };
+          }
+        }
+
+        current = current.parentNode;
+        depth++;
+      }
+
+      // Fallback para body
+      return { selector: "body", element: document.body };
+    }
+
+    _findTextStartIndex(range, parentElement, parentTextContent, text) {
+      let startIndex = -1;
+      const tempRange = document.createRange();
+      tempRange.selectNodeContents(parentElement);
+      const walker = document.createTreeWalker(
+        parentElement,
+        NodeFilter.SHOW_TEXT
+      );
+      let currentOffset = 0;
+      let node;
+
+      while ((node = walker.nextNode())) {
+        if (node === range.startContainer) {
+          startIndex = currentOffset + range.startOffset;
+          break;
+        }
+        currentOffset += node.length;
+      }
+
+      if (startIndex === -1) {
+        startIndex = parentTextContent.indexOf(text, 0);
+      }
+
+      return startIndex;
+    }
+
+    _updateUI() {
+      this._updateHighlightsCounter();
+      this._updateHighlightsList();
+      this._updateCitation();
+      this._updateThemeToggleIcon();
+      this._updateHideToggleText();
+      this._updateHighlightsSelectedButton();
+    }
+
+    _updateHighlightsSelectedButton() {
+      const selectedCount = this.state.selectedHighlights.size;
+      const highlightsBtn = this.shadow.querySelector(
+        '[data-mode="highlights"]'
+      );
+      if (highlightsBtn) {
+        highlightsBtn.textContent = `Highlights Selected (${selectedCount})`;
+      }
+    }
+
+    _updateHideToggleText() {
+      const hideToggle = this.elements.hideToggle;
+      if (hideToggle) {
+        hideToggle.textContent = this.state.hiddenHighlights
+          ? CONFIG.TEXTS.SHOW_HIGHLIGHTS
+          : CONFIG.TEXTS.HIDE_HIGHLIGHTS;
+      }
+    }
+
+    _updateHighlightsCounter() {
+      const counter = this.elements.container?.querySelector(
+        ".highlights-counter"
+      );
+      if (counter) {
+        const total = this.state.highlights.size;
+        const selected = this.state.selectedHighlights.size;
+        counter.textContent = `${selected}/${total} selected`;
+      }
+    }
+
+    // ======================
+    // CORREÇÃO DO TEMPLATE HTML
+    // ======================
+
+    _updateHighlightsList() {
+      const list = this.elements.highlightsList;
+      if (!list) return;
+
+      let highlights = Array.from(this.state.highlights.values());
+
+      // Aplicar filtro de busca se houver query
+      if (this.state.searchQuery) {
+        highlights = highlights.filter((highlight) =>
+          highlight.text.toLowerCase().includes(this.state.searchQuery)
+        );
+      }
+
+      // Ordenação por timestamp
+      const sorted = highlights.sort((a, b) => a.timestamp - b.timestamp);
+
+      if (sorted.length === 0) {
+        list.innerHTML = `
+      <div class="empty-state">
+        <p>⚠️ ${
+          this.state.searchQuery ? "No matches found" : "No highlights found"
+        }</p>
+        <small>${
+          this.state.searchQuery
+            ? "Try a different search term"
+            : "To highlight, select the text and<br>type <kbd>H</kbd>, or press ⚡ on top"
+        }</small>
+      </div>
+    `;
+        return;
+      }
+
+      // CORREÇÃO: Usar data-highlight-id (com hífen) em vez de data-highlightId
+      list.innerHTML = sorted
+        .map((highlight, index) => {
+          const date = new Date(highlight.timestamp);
+          const dateStr = this._formatDate(date);
+          const isRestored = !!document.getElementById(highlight.id);
+
+          return `
+      <div class="highlight-item ${
+        this.state.selectedHighlights.has(highlight) ? "selected" : ""
+      }" 
+           data-highlight-id="${highlight.id}" 
+           tabindex="0" 
+           role="listitem">
+        <div class="highlight-content">
+          <div class="highlight-text">${this._escapeHtml(highlight.text)}</div>
+          ${
+            highlight.text.length > 100
+              ? '<button class="toggle-expand" aria-label="Toggle expand">▼</button>'
+              : ""
+          }
+          <hr>
+          <div class="highlight-meta">
+            <span class="highlight-id">⚡ ${index + 1}</span>
+            <span class="highlight-date">${dateStr}</span>
+            <span class="highlight-length">${highlight.text.length} char</span>
+          </div>
+        </div>
+        <button class="delete-highlight" aria-label="Remover destaque" title="Remover destaque">×</button>
+      </div>
+    `;
+        })
+        .join("");
+
+      // Reanexar os event listeners
+      this._attachHighlightEventListeners();
+    }
+
+    // ======================
+    // EVENT LISTENER SIMPLIFICADO
+    // ======================
+
+    _attachHighlightEventListeners() {
+      const list = this.elements.highlightsList;
+      if (!list) return;
+
+      // Listeners para expandir/contrair texto
+      list.querySelectorAll(".toggle-expand").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const item = e.target.closest(".highlight-item");
+          item.classList.toggle("expanded");
+          e.target.textContent = item.classList.contains("expanded")
+            ? "▲"
+            : "▼";
+        });
+      });
+
+      // Listener principal para seleção - SIMPLES
+      list.querySelectorAll(".highlight-item").forEach((item) => {
+        const id = item.dataset.highlightId;
+
+        item.addEventListener("click", (e) => {
+          // Não faz nada se clicar nos botões de ação
+          if (
+            e.target.classList.contains("delete-highlight") ||
+            e.target.classList.contains("toggle-expand")
+          ) {
+            return;
+          }
+
+          // Seleção simples
+          this._toggleHighlightSelection(id);
+          this._scrollToHighlight(id);
+        });
+      });
+
+      // Listener para deletar
+      list.querySelectorAll(".delete-highlight").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const item = btn.closest(".highlight-item");
+          const id = item.dataset.highlightId;
+          this._deleteHighlight(id);
+        });
+      });
+    }
+
+    _formatDate(date) {
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const seconds = date.getSeconds().toString().padStart(2, "0");
+
+      return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+    }
+
+    _escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    _updateCitation() {
+      const preview = this.elements.citationPreview;
+      if (!preview) return;
+
+      let content = "";
+      const format = this.elements.formatSelect?.value || "plain";
+      const pageTitle = document.title;
+      const pageUrl = location.href;
+      const currentDate = new Date().toLocaleDateString();
+
+      switch (this.state.citationMode) {
+        case "highlights":
+          const selected = Array.from(this.state.selectedHighlights).sort(
+            (a, b) => a.timestamp - b.timestamp
+          );
+          if (selected.length === 0) {
+            content = "⚠️ No highlights selected";
+          } else {
+            content = this._formatContent(
+              selected.map((h) => h.text),
+              format,
+              pageTitle,
+              pageUrl,
+              currentDate
+            );
+          }
+          break;
+
+        case "selection":
+          const currentSelection = window.getSelection().toString().trim();
+          if (currentSelection) {
+            content = this._formatContent(
+              [currentSelection],
+              format,
+              pageTitle,
+              pageUrl,
+              currentDate
+            );
+          } else {
+            content = `⚠️ No selection\n---\n`;
+          }
+          break;
+
+        case "clipboard":
+          content = this.state.clipboardContent || "⚠️ Empty clipboard";
+          if (content !== "⚠️ Empty clipboard") {
+            content = this._formatContent(
+              [content],
+              format,
+              pageTitle,
+              pageUrl,
+              currentDate
+            );
+          }
+          break;
+      }
+
+      // Adicionar link de legibilidade se habilitado
+      if (
+        this.state.readabilityEnabled &&
+        content &&
+        !content.includes("⚠️ No highlights") &&
+        content !== "⚠️ Empty clipboard"
+      ) {
+        const service = this.elements.readabilitySelect?.value;
+        const serviceConfig = CONFIG.CITATION.READABILITY_SERVICES.find(
+          (s) => s.value === service
+        );
+        if (serviceConfig) {
+          content += `\n- Readability: ${serviceConfig.url(location.href)}`;
+        }
+      }
+
+      // Adicionar link de fact-checking se habilitado
+      if (
+        this.state.factCheckEnabled &&
+        content &&
+        !content.includes("⚠️ No highlights")
+      ) {
+        const service = this.elements.factCheckSelect?.value;
+        const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
+          (s) => s.value === service
+        );
+        if (serviceConfig) {
+          const searchText = content.split("\n")[0].substring(0, 100);
+          content += `\n- Fact-Check: ${serviceConfig.url(searchText)}`;
+        }
+      }
+
+      content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.creditsUrl}`;
+
+      preview.value = content;
+    }
+
+    _formatContent(texts, format, pageTitle, pageUrl, date) {
+      switch (format) {
+        case "whatsapp":
+          return this._formatWhatsApp(texts, pageTitle, pageUrl);
+        case "academic":
+          return this._formatAcademic(texts, pageTitle, pageUrl, date);
+        case "html":
+          return this._formatHTML(texts, pageTitle, pageUrl);
+        case "markdown":
+          return this._formatMarkdown(texts, pageTitle, pageUrl);
+        case "twitter":
+          return this._formatTwitter(texts, pageTitle, pageUrl);
+        case "plain":
+        default:
+          return this._formatPlain(texts, pageTitle, pageUrl);
+      }
+    }
+
+    _formatWhatsApp(texts, title, url) {
+      let content = `*${title}*\n\n`;
+      content += texts.map((t) => `➤ ${t}`).join("\n\n");
+      content += `\n\n- Source: ${url}`;
+      return content;
+    }
+
+    _formatAcademic(texts, title, url, date) {
+      let content = `${title}\n`;
+      content += `Acesso em: ${date}\n\n`;
+      content += texts.map((t, i) => `Citação ${i + 1}: "${t}"`).join("\n\n");
+      content += `\n\nDisponível em: ${url}`;
+      return content;
+    }
+
+    _formatHTML(texts, title, url) {
+      let content = `<h2>${title}</h2>`;
+      content += `<ul>`;
+      content += texts.map((t) => `<li>${t}</li>`).join("");
+      content += `</ul>`;
+      content += `</br></br>`;
+      content += `- Source: <a href="${url}" target="_blank">${url}</a>`;
+      return content;
+    }
+
+    _formatMarkdown(texts, title, url) {
+      let content = `## ${title}\n\n`;
+      content += texts.map((t) => `- ${t}`).join("\n\n");
+      content += `\n\n- Source: (${url})`;
+      return content;
+    }
+
+    _formatTwitter(texts, title, url) {
+      const maxLength = 280 - url.length - 5;
+      let content = `${title}\n\n`;
+      const mainText = texts.join(" ");
+
+      if (content.length + mainText.length > maxLength) {
+        content += mainText.substring(0, maxLength - content.length) + "...";
+      } else {
+        content += mainText;
+      }
+
+      content += `\n\n- ${url}`;
+      return content;
+    }
+
+    _formatPlain(texts, title, url) {
+      return `${title}\n\n${texts.join("\n\n")}\n\n- Source: ${url}`;
+    }
+
+    _getActionContent() {
+      const format = this.elements.formatSelect.value;
+      const rawContent = this.elements.citationPreview.value;
+
+      if (!rawContent) return null;
+
+      switch (format) {
+        case "html":
+          return `<blockquote>${rawContent.replace(
+            /\n/g,
+            "<br>"
+          )}</blockquote>`;
+
+        case "markdown":
+          return rawContent
+            .split("\n")
+            .map((line) => `${line}`)
+            .join("\n");
+
+        case "plain":
+          return rawContent;
+
+        case "whatsapp":
+          return `${rawContent}`;
+
+        case "twitter":
+          const maxLength = 280 - 24;
+          return rawContent.length > maxLength
+            ? `${rawContent.substring(0, maxLength)}...`
+            : rawContent;
+
+        case "academic":
+        default:
+          return `${rawContent}`;
+      }
+    }
+
+    _copyContent(content) {
+      navigator.clipboard
+        .writeText(content)
+        .then(() =>
+          this._showFeedback("Content copied to clipboard!", "success")
+        )
+        .catch((err) => {
+          console.error("Copy failed:", err);
+          this._showFeedback("Failed to copy content", "error");
+        });
+    }
+
+    _shareContent(platform, content) {
+      let url;
+      const pageUrl = encodeURIComponent(location.href);
+
+      if (platform === "whatsapp") {
+        url = `https://wa.me/?text=${encodeURIComponent(
+          `${content}\n\n${pageUrl}`
+        )}`;
+      } else {
+        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          content
+        )}&url=${pageUrl}`;
+      }
+
+      window.open(url, "_blank", "width=600,height=400");
+    }
+
+    _sendEmail() {
+      const content = this.elements.citationPreview?.value || "";
+      if (
+        !content ||
+        content === "⚠️ No highlights selected" ||
+        content === "⚠️ Empty clipboard"
+      ) {
+        this._showFeedback("No valid content to send by email", "warning");
+        return;
+      }
+
+      const pageTitle = document.title;
+      const subject = `${pageTitle} [© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}]`;
+      const body = encodeURIComponent(content);
+
+      const mailtoLink = `mailto:?subject=${encodeURIComponent(
+        subject
+      )}&body=${body}`;
+
+      try {
+        const emailWindow = window.open(
+          mailtoLink,
+          "_blank",
+          "noopener,noreferrer"
+        );
+        if (
+          !emailWindow ||
+          emailWindow.closed ||
+          typeof emailWindow.closed === "undefined"
+        ) {
+          throw new Error("Popup bloqueado");
+        }
+        this._showFeedback("Email client opened in new window", "success");
+      } catch (error) {
+        console.error("Falha ao abrir cliente de e-mail:", error);
+        this._showFeedback("Allow popups to open email client", "error");
+      }
+    }
+
+    _downloadContent(content) {
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${new Date()
+        .toISOString()
+        .slice(0, 10)}_EasyShare_ByMagasine.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    _handleSearch(query) {
+      this.state.searchQuery = query.toLowerCase();
+      this._updateHighlightsList();
+
+      const clearBtn = this.elements.clearSearch;
+      if (clearBtn) {
+        clearBtn.classList.toggle("hidden", !query);
+      }
+
+      if (query === "") {
+        this.elements.searchInput.value = "";
+      }
+    }
+
+    _toggleSortOrder() {
+      this.state.sortOrder =
+        this.state.sortOrder === "creation" ? "alphabetical" : "creation";
+      this._updateHighlightsList();
+      this._saveSettings();
+
+      const sortBtn = this.elements.sortToggle;
+      if (sortBtn) {
+        sortBtn.textContent =
+          this.state.sortOrder === "creation"
+            ? CONFIG.TEXTS.SORT_CREATION
+            : CONFIG.TEXTS.SORT_ALPHABETICAL;
+      }
+    }
+
+    _setCitationMode(mode) {
+      this.state.citationMode = mode;
+
+      this.elements.citationModes?.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === mode);
+        btn.setAttribute("aria-checked", btn.dataset.mode === mode);
+      });
+
+      if (mode === "clipboard") {
+        this._updateClipboardContent();
+      } else {
+        this._updateCitation();
+      }
+
+      this._saveSettings();
+    }
+
+    _toggleReadability() {
+      this.state.readabilityEnabled =
+        this.elements.readabilityCheck?.checked || false;
+      this._updateCitation();
+      this._saveSettings();
+    }
+
+    _toggleFactCheck() {
+      this.state.factCheckEnabled =
+        this.elements.factCheckCheck?.checked || false;
+      this._updateCitation();
+      this._saveSettings();
+
+      const message = this.state.factCheckEnabled
+        ? CONFIG.TEXTS.FACT_CHECK_ENABLED
+        : CONFIG.TEXTS.FACT_CHECK_DISABLED;
+      this._showFeedback(message, "info");
+    }
+
+    _openReadability() {
+      const service = this.elements.readabilitySelect?.value;
+      const serviceConfig = CONFIG.CITATION.READABILITY_SERVICES.find(
+        (s) => s.value === service
+      );
+      if (serviceConfig) {
+        const url = serviceConfig.url(location.href);
+        window.open(url, "_blank");
+      }
+    }
+
+    _openFactCheck() {
+      try {
+        const service = this.elements.factCheckSelect?.value;
+        const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
+          (s) => s.value === service
+        );
+        if (!serviceConfig) {
+          this._showFeedback("Select a fact-checking service", "error");
+          return;
+        }
+
+        let searchText = "";
+        switch (this.state.citationMode) {
+          case "highlights":
+            const selected = Array.from(this.state.selectedHighlights);
+            searchText = selected[0]?.text || document.title;
+            break;
+          case "selection":
+            searchText =
+              window.getSelection().toString().trim() || document.title;
+            break;
+          case "clipboard":
+            searchText = this.state.clipboardContent || document.title;
+            break;
+          default:
+            searchText = document.title;
+        }
+
+        const url = serviceConfig.url(searchText);
+        window.open(url, "_blank", "noopener,noreferrer");
+        this._showFeedback(`Checking in ${serviceConfig.name}...`, "success");
+      } catch (error) {
+        console.error("Fact-Check Error:", error);
+        this._showFeedback("Error opening verification", "error");
+      }
+    }
+
+    _prepareFactCheckText(text) {
+      if (!text) return "";
+      let processed = text.substring(0, 70);
+      const lastSpace = processed.lastIndexOf(" ");
+      if (lastSpace > 50) {
+        processed = processed.substring(0, lastSpace);
+      }
+      processed = processed
+        .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      return processed || document.title.substring(0, 50);
+    }
 
     _switchTab(tabName) {
       this.state.activeTab = tabName;
-
-      // Update classes and ARIA attributes
       this.elements.tabHighlights?.classList.toggle(
         "active",
         tabName === "highlights"
@@ -746,7 +1994,6 @@ javascript: (() => {
         "active",
         tabName === "citation"
       );
-
       this.elements.tabHighlights?.setAttribute(
         "aria-selected",
         tabName === "highlights"
@@ -755,8 +2002,6 @@ javascript: (() => {
         "aria-selected",
         tabName === "citation"
       );
-
-      // Mostrar/ocultar conteúdo das tabs
       this.elements.highlightsTab?.classList.toggle(
         "hidden",
         tabName !== "highlights"
@@ -765,10 +2010,7 @@ javascript: (() => {
         "hidden",
         tabName !== "citation"
       );
-
       this._saveSettings();
-
-      // Atualizar conteúdo se necessário
       if (tabName === "citation") {
         this._updateCitation();
       }
@@ -776,10 +2018,19 @@ javascript: (() => {
 
     _toggleMinimize() {
       this.state.isMinimized = !this.state.isMinimized;
+
       this.elements.container?.classList.toggle(
         "minimized",
         this.state.isMinimized
       );
+
+      // Alterna texto e atributos do botão com operador ternário
+      const btn = this.elements.minimizeButton;
+      if (btn) {
+        btn.textContent = this.state.isMinimized ? "+" : "−";
+        btn.title = this.state.isMinimized ? "Maximize" : "Minimize";
+        btn.setAttribute("aria-label", btn.title);
+      }
 
       this._saveSettings();
     }
@@ -788,13 +2039,9 @@ javascript: (() => {
       this.state.theme = this.state.theme === "dark" ? "light" : "dark";
       this._applyTheme(this.state.theme);
       this._saveSettings();
-
-      // Atualizar cores dos destaques
       this.state.highlights.forEach((highlight) => {
         this._updateHighlightVisualState(highlight.id);
       });
-
-      // Atualizar ícone do botão
       this._updateThemeToggleIcon();
     }
 
@@ -813,94 +2060,31 @@ javascript: (() => {
       }
     }
 
-    _handleDrag(e) {
-      e.preventDefault();
-      this.state.isDragging = true;
-
-      const rect = this.host.getBoundingClientRect();
-      this.state.dragOffset = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
-
-      const handleMouseMove = (e) => {
-        if (!this.state.isDragging) return;
-
-        const x = e.clientX - this.state.dragOffset.x;
-        const y = e.clientY - this.state.dragOffset.y;
-
-        // Limitar às bordas da viewport
-        const maxX = window.innerWidth - this.host.offsetWidth;
-        const maxY = window.innerHeight - this.host.offsetHeight;
-
-        const constrainedX = Math.max(0, Math.min(x, maxX));
-        const constrainedY = Math.max(0, Math.min(y, maxY));
-
-        this.host.style.left = constrainedX + "px";
-        this.host.style.top = constrainedY + "px";
-        this.host.style.right = "auto";
-
-        this.state.position = {
-          top: constrainedY + "px",
-          left: constrainedX + "px",
-          right: "auto",
-        };
-      };
-
-      const handleMouseUp = () => {
-        this.state.isDragging = false;
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        this._saveSettings();
-      };
-
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    }
-
     _moveHighlightDown() {
-      // 1. Não permite movimento se nenhum item estiver selecionado
-      if (this.state.selectedHighlights.size === 0) {
-        return;
-      }
-
-      // 2. Alerta e não permite movimento se mais de um item estiver selecionado
+      if (this.state.selectedHighlights.size === 0) return;
       if (this.state.selectedHighlights.size > 1) {
         alert("Select only one item to move.");
         return;
       }
 
-      // Sabemos que exatamente UM item está selecionado.
-
       const highlights = Array.from(this.state.highlights.values()).sort(
         (a, b) => a.timestamp - b.timestamp
-      ); // Ordem crescente para match com UI
-
-      // Um item selecionado, 'selectedIndices' terá apenas um elemento.
+      );
       const selectedIndices = highlights
-        .map((h, i) => (this.state.selectedHighlights.has(h) ? i : -1)) // Usando 'h' para verificar se o Set guarda objetos
+        .map((h, i) => (this.state.selectedHighlights.has(h) ? i : -1))
         .filter((i) => i !== -1);
-
-      const index = selectedIndices[0]; // Pega o único índice selecionado
+      const index = selectedIndices[0];
       const nextIndex = index + 1;
       const currentHighlight = highlights[index];
       const nextHighlight = highlights[nextIndex];
-
       let moved = false;
 
-      // Condição de movimento para um único item:
-      // 1. Não pode ser o último item da lista
-      // 2. Não precisa mais verificar `!this.state.selectedHighlights.has(nextHighlight)`
-      //    porque sabemos que apenas um item está selecionado e o de baixo, se existir, não estará selecionado.
       if (nextIndex < highlights.length) {
-        // Trocar posições no array temporário
         [highlights[index], highlights[nextIndex]] = [
           nextHighlight,
           currentHighlight,
         ];
         moved = true;
-
-        // Trocar os timestamps dos elementos que acabaram de trocar de posição
         const tempTimestamp = currentHighlight.timestamp;
         currentHighlight.timestamp = nextHighlight.timestamp;
         nextHighlight.timestamp = tempTimestamp;
@@ -915,48 +2099,30 @@ javascript: (() => {
     }
 
     _moveHighlightUp() {
-      // 1. Não permite movimento se nenhum item estiver selecionado
-      if (this.state.selectedHighlights.size === 0) {
-        return;
-      }
-
-      // 2. Alerta e não permite movimento se mais de um item estiver selecionado
+      if (this.state.selectedHighlights.size === 0) return;
       if (this.state.selectedHighlights.size > 1) {
         alert("Select only one item to move.");
         return;
       }
 
-      // Sabemos que exatamente UM item está selecionado.
-
       const highlights = Array.from(this.state.highlights.values()).sort(
         (a, b) => a.timestamp - b.timestamp
-      ); // Ordem crescente para match com UI
-
-      // Um item selecionado, 'selectedIndices' terá apenas um elemento.
+      );
       const selectedIndices = highlights
-        .map((h, i) => (this.state.selectedHighlights.has(h) ? i : -1)) // Usando 'h' para verificar se o Set guarda objetos
+        .map((h, i) => (this.state.selectedHighlights.has(h) ? i : -1))
         .filter((i) => i !== -1);
-
-      const index = selectedIndices[0]; // Pega o único índice selecionado
+      const index = selectedIndices[0];
       const prevIndex = index - 1;
       const currentHighlight = highlights[index];
       const prevHighlight = highlights[prevIndex];
-
       let moved = false;
 
-      // Condição de movimento para um único item:
-      // 1. Não pode ser o primeiro item da lista
-      // 2. Não precisa mais verificar `!this.state.selectedHighlights.has(prevHighlight)`
-      //    porque sabemos que apenas um item está selecionado e o de cima, se existir, não estará selecionado.
       if (prevIndex >= 0) {
-        // Trocar posições no array temporário
         [highlights[index], highlights[prevIndex]] = [
           prevHighlight,
           currentHighlight,
         ];
         moved = true;
-
-        // Trocar os timestamps dos elementos que acabaram de trocar de posição
         const tempTimestamp = currentHighlight.timestamp;
         currentHighlight.timestamp = prevHighlight.timestamp;
         prevHighlight.timestamp = tempTimestamp;
@@ -970,12 +2136,7 @@ javascript: (() => {
       }
     }
 
-    // ======================
-    // FEEDBACK E NOTIFICAÇÕES
-    // ======================
-
     _showFeedback(message, type = "info") {
-      // Remove previous feedback if exists
       const existingFeedback = this.shadow.querySelector(".feedback-message");
       if (existingFeedback) {
         existingFeedback.remove();
@@ -986,10 +2147,8 @@ javascript: (() => {
       feedback.textContent = message;
       feedback.setAttribute("role", "alert");
       feedback.setAttribute("aria-live", "polite");
-
       this.elements.container?.appendChild(feedback);
 
-      // Auto-remover após o tempo configurado
       setTimeout(() => {
         if (feedback.parentNode) {
           feedback.style.opacity = "0";
@@ -997,10 +2156,6 @@ javascript: (() => {
         }
       }, CONFIG.UI.FEEDBACK_DURATION);
     }
-
-    // ======================
-    // UTILITÁRIOS
-    // ======================
 
     _debounce(func, wait) {
       let timeout;
@@ -1022,13 +2177,10 @@ javascript: (() => {
     }
 
     _handleThemeChange(e) {
-      // Só atualiza automaticamente se o usuário não definiu manualmente
       if (!this._hasManualTheme()) {
         this.state.theme = e.matches ? "dark" : "light";
         this._applyTheme(this.state.theme);
         this._updateThemeToggleIcon();
-
-        // Atualizar cores dos destaques
         this.state.highlights.forEach((highlight) => {
           this._updateHighlightVisualState(highlight.id);
         });
@@ -1036,7 +2188,6 @@ javascript: (() => {
     }
 
     _hasManualTheme() {
-      // Verifica se o usuário definiu um tema manualmente
       try {
         const saved = localStorage.getItem("unifiedTool_settings");
         if (saved) {
@@ -1053,17 +2204,13 @@ javascript: (() => {
       if (this.elements.container) {
         this.elements.container.setAttribute("data-theme", theme);
       }
-      this._updateThemeToggleIcon(); // Garante que o ícone seja atualizado ao aplicar o tema
+      this._updateThemeToggleIcon();
     }
 
     _handleBeforeUnload() {
       this._saveSettings();
       this._saveHighlights();
     }
-
-    // ======================
-    // PERSISTÊNCIA DE DADOS
-    // ======================
 
     _saveSettings() {
       try {
@@ -1075,7 +2222,7 @@ javascript: (() => {
           sortOrder: this.state.sortOrder,
           hiddenHighlights: this.state.hiddenHighlights,
           position: this.state.position,
-          theme: this.state.theme, // Salvar tema escolhido
+          theme: this.state.theme,
           factCheckEnabled: this.state.factCheckEnabled,
           factCheckService: this.state.factCheckService,
         };
@@ -1090,10 +2237,7 @@ javascript: (() => {
         const saved = localStorage.getItem("unifiedTool_settings");
         if (saved) {
           const settings = JSON.parse(saved);
-
-          // Atualiza apenas as propriedades existentes no estado
           Object.assign(this.state, {
-            // Configurações existentes
             activeTab: settings.activeTab || "citation",
             isMinimized: settings.isMinimized || false,
             citationMode: settings.citationMode || "highlights",
@@ -1109,8 +2253,6 @@ javascript: (() => {
               left: "auto",
             },
             theme: settings.theme || this._detectSystemTheme(),
-
-            // Novas configurações de fact-checking
             factCheckEnabled:
               settings.factCheckEnabled !== undefined
                 ? settings.factCheckEnabled
@@ -1118,7 +2260,6 @@ javascript: (() => {
             factCheckService: settings.factCheckService || "google-fact-check",
           });
 
-          // Atualizar elementos da UI
           if (this.elements.factCheckCheck) {
             this.elements.factCheckCheck.checked = this.state.factCheckEnabled;
           }
@@ -1126,7 +2267,6 @@ javascript: (() => {
             this.elements.factCheckSelect.value = this.state.factCheckService;
           }
 
-          // Configurações existentes de UI
           this._applyTheme(this.state.theme);
           this._switchTab(this.state.activeTab);
           if (this.elements.readabilityCheck) {
@@ -1147,379 +2287,115 @@ javascript: (() => {
         }
       } catch (error) {
         console.warn("Failed to load settings:", error);
-        // Valores padrão em caso de erro
         this._switchTab("citation");
         this._applyTheme(this._detectSystemTheme());
-
-        // Garantir que os novos estados tenham valores padrão
         this.state.factCheckEnabled = true;
         this.state.factCheckService = "google-fact-check";
       }
     }
 
-    _saveHighlights() {
-      try {
-        const highlights = Array.from(this.state.highlights.entries());
-        const selected = Array.from(this.state.selectedHighlights).map(
-          (h) => h.id
-        );
-
-        localStorage.setItem(
-          "unifiedTool_highlights",
-          JSON.stringify({
-            highlights,
-            selected,
-            url: location.href,
-          })
-        );
-      } catch (error) {
-        console.warn("Failed to save highlights:", error);
-      }
-    }
-
-    _loadHighlights() {
-      try {
-        const saved = localStorage.getItem("unifiedTool_highlights");
-        if (saved) {
-          const data = JSON.parse(saved);
-
-          // Carregar apenas destaques da URL atual
-          if (data.url === location.href && data.highlights) {
-            this.state.highlights = new Map(data.highlights);
-
-            // Restaurar seleções
-            if (data.selected) {
-              data.selected.forEach((id) => {
-                const highlight = this.state.highlights.get(id);
-                if (highlight) {
-                  this.state.selectedHighlights.add(highlight);
-                }
-              });
-            }
-
-            // Restaurar destaques no DOM
-            this.state.highlights.forEach((highlight) => {
-              this._restoreHighlight(highlight);
-            });
-          }
-        }
-      } catch (error) {
-        console.warn("Failed to load highlights:", error);
-      }
-    }
-
-    // ======================
-    // SERIALIZAÇÃO DE RANGE
-    // ======================
-
-    _serializeRange(range) {
-      try {
-        const startContainer = range.startContainer;
-        const endContainer = range.endContainer;
-
-        return {
-          startContainerPath: this._getNodePath(startContainer),
-          startOffset: range.startOffset,
-          endContainerPath: this._getNodePath(endContainer),
-          endOffset: range.endOffset,
-          text: range.toString(),
-        };
-      } catch (error) {
-        console.error("Failed to serialize range:", error);
-        return null;
-      }
-    }
-
-    _deserializeRange(rangeData) {
-      try {
-        const startContainer = this._getNodeByPath(
-          rangeData.startContainerPath
-        );
-        const endContainer = this._getNodeByPath(rangeData.endContainerPath);
-
-        if (!startContainer || !endContainer) return null;
-
-        const range = document.createRange();
-        range.setStart(startContainer, rangeData.startOffset);
-        range.setEnd(endContainer, rangeData.endOffset);
-
-        // Verificar se o texto ainda corresponde
-        if (range.toString() !== rangeData.text) {
-          return null;
-        }
-
-        return range;
-      } catch (error) {
-        console.error("Failed to deserialize range:", error);
-        return null;
-      }
-    }
-
-    _getNodePath(node) {
-      const path = [];
-      let current = node;
-
-      while (current && current !== document.body) {
-        if (current.parentNode) {
-          const siblings = Array.from(current.parentNode.childNodes);
-          const index = siblings.indexOf(current);
-          path.unshift({
-            tagName: current.nodeName,
-            index: index,
-            nodeType: current.nodeType,
-          });
-        }
-        current = current.parentNode;
-      }
-
-      return path;
-    }
-
-    _getNodeByPath(path) {
-      let current = document.body;
-
-      for (const step of path) {
-        if (!current || !current.childNodes) return null;
-
-        const child = current.childNodes[step.index];
-        if (
-          !child ||
-          child.nodeName !== step.tagName ||
-          child.nodeType !== step.nodeType
-        ) {
-          return null;
-        }
-
-        current = child;
-      }
-
-      return current;
-    }
-
-    // ======================
-    // CLIPBOARD
-    // ======================
-
     async _updateClipboardContent() {
       try {
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.CLIPBOARD_UPDATING, "info");
-
         if (!navigator.clipboard) {
           throw new Error("API de clipboard não disponível");
         }
-
         const permission = await navigator.permissions.query({
           name: "clipboard-read",
         });
         this.state.clipboardPermission = permission.state;
-
         if (permission.state === "denied") {
           throw new Error(CONFIG.TEXTS.FEEDBACK.CLIPBOARD_PERMISSION_DENIED);
         }
-
         const text = await navigator.clipboard.readText();
         this.state.clipboardContent = text || "⚠️ Empty clipboard";
         this.state.clipboardError = null;
-
-        // Atualizar a citação se estivermos no modo clipboard
         if (this.state.citationMode === "clipboard") {
           this._updateCitation();
         }
-
         this._showFeedback(CONFIG.TEXTS.FEEDBACK.CITATION_COPIED, "success");
       } catch (error) {
         console.error("Clipboard access failed:", error);
         this.state.clipboardError = error.message;
         this.state.clipboardContent = "Error accessing clipboard";
-
         if (this.state.citationMode === "clipboard") {
           this._updateCitation();
         }
-
         this._showFeedback(error.message, "error");
       }
     }
 
-    // ======================
-    // TEMPLATES E ESTILOS
-    // ======================
-
-    _getMainTemplate() {
-      return `
-<div class="unified-header" id="header">
-  <div class="header-content">
-    <div class="app-title">
-      <h3 class="app-name">${CONFIG.APP_INFO.name}</h3>
-      <a class="app-version" href="${CONFIG.APP_INFO.versionUrl}" title="© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}" target="_blank" rel="noopener">${CONFIG.APP_INFO.version}</a>
-    </div>
-    <div class="header-controls">
-      <button id="highlight-action-btn" class="control-btn" aria-label="Criar destaque" title="Criar destaque (H)">⚡</button>
-      <button id="theme-toggle" class="control-btn" aria-label="Toggle theme" title="Toggle theme">🌙</button>
-      <button id="minimize-button" class="control-btn" aria-label="Minimize" title="Minimize">−</button>
-      <button id="close-button" class="control-btn" aria-label="Close" title="Close">×</button>
-    </div>
-  </div>
-</div>
-
-<nav class="tab-navigation" role="tablist">
-<button id="tab-highlights" class="tab-btn" role="tab" aria-selected="true" aria-controls="highlights-tab">
-  Highlights List
-</button>
-<button id="tab-citation" class="tab-btn active" role="tab" aria-selected="false" aria-controls="citation-tab">
-  Citation Options
-</button>
-</nav>
-
-<main class="unified-content">
-  <section id="highlights-tab" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-highlights">
-<div class="highlights-controls">
-  <div class="search-container">
-    <label for="search-input" class="visually-hidden">Search highlights</label>
-    <input type="text" id="search-input" placeholder="Search highlights..." aria-label="Search highlights">
-    <button id="clear-search" class="clear-btn hidden" aria-label="Clear search" title="Clear search">×</button>
-  </div>
-
-  <div class="control-buttons">
-    <button id="hide-toggle" class="btn btn-secondary">${CONFIG.TEXTS.HIDE_HIGHLIGHTS}</button>
-    <!--- <button id="sort-toggle" class="btn btn-secondary">${CONFIG.TEXTS.SORT_CREATION}</button> --->
-    <button id="move-up" class="btn btn-secondary" title="Move selected up">↑</button>
-    <button id="move-down" class="btn btn-secondary" title="Move selected down">↓</button>
-    <button id="clear-highlights" class="btn btn-danger">Clear All</button>
-  </div>
-
-  <div class="highlights-counter">0/0 selected</div>
-</div>
-
-    <div id="highlights-list" class="highlights-list" role="list"></div>
-
-    <div class="highlights-help">
-      <small>
-      <br>Click on the highlight list to select and scroll
-      </small>
-    </div>
-  </section>
-
-<section id="citation-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-citation">
-  <!-- Agrupamento: Source -->
-  <fieldset class="fieldset">
-    <legend>Text Source to Load</legend>
-    <div class="mode-buttons" role="radiogroup" aria-label="Citation mode">
-      <button class="mode-btn active" data-mode="highlights" role="radio" aria-checked="true">Highlights Selected (0)</button>
-      <button class="mode-btn" data-mode="selection" role="radio" aria-checked="false">Single Selection</button>
-      <button class="mode-btn" data-mode="clipboard" role="radio" aria-checked="false">Clipboard</button>
-    </div>
-  </fieldset>
-  
-  <!-- Agrupamento: Preview -->
-  <fieldset class="fieldset">
-    <legend>Text Preview</legend>
-    <div class="citation-preview-container">
-      <textarea id="citation-preview" class="citation-preview" readonly aria-label="Citation preview"></textarea>
-    </div>
-  </fieldset>
-
-  <!--- <button id="refresh-clipboard" class="btn btn-secondary refresh-btn">
-    🔄 Refresh Clipboard
-  </button> --->
-
-  <!-- Checkbox separado, fora dos agrupamentos -->
-  <div class="control-group">
-    <input type="checkbox" id="readability-check" checked>
-    <label for="readability-check">Add Readability Services Links</label>
-  </div>
-    
-  <div class="control-group">
-    <input type="checkbox" id="fact-check-check" checked>
-    <label for="fact-check-check">${CONFIG.TEXTS.ADD_FACT_CHECK}</label>
-  </div>
-
-  <!-- Agrupamento: Selectors -->
-  <fieldset class="fieldset">
-    <legend>Text Settings and Submission </legend>
-
-    <div class="control-group">
-      <label for="format-select">Formats:</label>
-      <select id="format-select" aria-label="Citation format"></select>
-    </div>
-
-    <div class="control-group">
-      <label for="readability-select">Readability:</label>
-      <div class="readability-control">
-        <select id="readability-select" aria-label="Reading service"></select>
-        <button id="readability-button" class="btn btn-secondary" aria-label="Open readable page" title="Open readable page">🔎</button>
-      </div>
-   </div>
-        
-   <div class="control-group">
-        <label for="fact-check-select">Fact Check:</label>
-        <select id="fact-check-select" aria-label="Fact-check service"></select>
-        <button id="fact-check-button" class="btn btn-secondary" aria-label="Open fact check page" title="Open fact check page">🔎</button>
-   </div>
-
-    <div class="control-group">
-      <label for="action-select" id="submit">Submit: ⚡</label>
-      <select id="action-select" aria-label="Action for citation"></select>
-    </div>
-  </fieldset>
-
-</section>
-</main>
-      `;
+    _handleActionSelect(e) {
+      const action = e.target.value;
+      if (!action) return;
+      e.target.value = "";
+      const content = this._getActionContent();
+      if (!content || content === "⚠️ No highlights selected") {
+        this._showFeedback(
+          "⚠️ No content available for this action",
+          "warning"
+        );
+        return;
+      }
+      switch (action) {
+        case "copy":
+          this._copyContent(content);
+          break;
+        case "whatsapp":
+          this._shareContent(action, content);
+          break;
+        case "twitter":
+          this._shareContent(action, content);
+          break;
+        case "email":
+          this._sendEmail(content);
+          break;
+        case "download":
+          this._downloadContent(content);
+          break;
+        default:
+          console.warn("Unknown action:", action);
+      }
     }
 
     _getStyles() {
       return `
         /* ===== VARIÁVEIS CSS OTIMIZADAS ===== */
         :host {
-          /* Cores principais */
-          --primary-color: #031D35; /* #143858; */
+          --primary-color: #031D35;
           --primary-hover: #205986;
           --primary-light: #e3f2fd;
           --secondary-color: #6c757d;
           --secondary-hover: #5a6268;
-          
-          /* Estados */
           --success-color: #28a745;
           --danger-color: #dc3545;
           --danger-hover: #c82333;
           --warning-color: #ffc107; 
           --info-color: #17a2b8;
-    
-          /* Cores novas - Tema claro Ativo */
           --light-bg: #afc0cd;
           --light-surface:rgba(234, 234, 234, 0.81);
           --light-border: #BBBBBB;
           --light-text:  #333333;
           --light-text-muted: #777777;
-
-          /* Cores neutras - Tema escuro */
-          --dark-bg: #031D35; /* #282c34; #1a202c; */
+          --dark-bg: #031D35;
           --dark-surface: #2d3748;
-          --dark-border: #555;/*  #4a5568; */
+          --dark-border: #555;
           --dark-text: #e2e8f0;
           --dark-text-muted: #a0aec0;
           --dark-input-bg: #2d3748;
-          
-          /* Layout */
           --container-width: ${CONFIG.UI.MAX_WIDTH}px;
           --border-radius: 8px;
           --border-radius-sm: 4px;
           --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
           --shadow-dark: 0 4px 12px rgba(0, 0, 0, 0.3);
-          
-          /* Animações */
           --transition: all 0.2s ease;
           --transition-fast: all 0.15s ease;
-          
-          /* Espaçamentos */
           --spacing-xs: 4px;
           --spacing-sm: 8px;
           --spacing-md: 12px;
           --spacing-lg: 16px;
           --spacing-xl: 20px;
-          
-          /* Tipografia */
           --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           --font-size-xs: 11px;
           --font-size-sm: 12px;
@@ -1576,12 +2452,12 @@ javascript: (() => {
 
         .unified-container[data-theme="dark"] .tab-btn:not(.active) {
           background: var(--primary-hover);
-          color: vwhite);
+          color: white;
         }
 
         .unified-container[data-theme="dark"] .tab-btn:not(.active):hover {
           background: var(--primary-hover);
-          color: vwhite);
+          color: white;
         }
 
         .unified-container[data-theme="dark"] .fieldset {
@@ -1593,7 +2469,7 @@ javascript: (() => {
         }
 
         .unified-container[data-theme="dark"] .btn {
-          background: var(--danger-surface);
+          background: var(--dark-surface);
           color: var(--dark-text);
           border-color: var(--dark-border);
         }
@@ -1620,9 +2496,13 @@ javascript: (() => {
         }
 
         .unified-container[data-theme="dark"] .highlight-item:hover {
-          /* background: var(--light-bg); */
           border-color: var(--warning-color);
         }
+
+.unified-container[data-theme="dark"] .highlight-item.selected {
+      background: var(--dark-surface) !important;
+      border-color: var(--primary-color) !important;
+    }
 
         .unified-container[data-theme="dark"] .highlights-counter,
         .unified-container[data-theme="dark"] .highlights-help {
@@ -1645,7 +2525,7 @@ javascript: (() => {
           background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
           border-bottom: 1px solid var(--light-border);
           padding: 0 var(--spacing-md);
-          cursor: move;
+          cursor: default;
           user-select: none;
         }
 
@@ -1699,7 +2579,7 @@ javascript: (() => {
           cursor: pointer;
           font-size: var(--font-size-lg);
           font-weight: 500;
-          padding: var(--spacing-xm);
+          padding: var(--spacing-sm);
           min-width: 36px;
           min-height: 36px;
           display: flex;
@@ -1720,7 +2600,7 @@ javascript: (() => {
         }
 
         #close-button.control-btn:hover {
-        background: var(--danger-color);
+          background: var(--danger-color);
         }
 
         /* ===== NAVEGAÇÃO DE ABAS MELHORADA ===== */
@@ -1745,17 +2625,12 @@ javascript: (() => {
           transition: var(--transition);
           color: var(--primary-light);
           position: relative;
-          /* outline: 0; */
         }
 
         .tab-btn.active {
           background: var(--primary-hover);
           color: white;
-          border-top-color: transparent;
-          border-righ-colort: transparent;
           border-bottom-color: var(--warning-color);
-          border-left-color: transparent;
-          outline: 0;
         }
 
         .tab-btn:not(.active):hover {
@@ -1875,7 +2750,7 @@ javascript: (() => {
 
         .btn.btn-danger:hover {
           background: var(--danger-hover);
-          border-color: black; /* var(--danger-hover); */
+          border-color: black;
         }
 
         /* ===== BOTÕES DE MODO MELHORADOS ===== */
@@ -1887,7 +2762,7 @@ javascript: (() => {
 
         .mode-btn {
           padding: var(--spacing-sm) var(--spacing-md);
-          border: 1px solid var(--dark-border); /* light-border */
+          border: 1px solid var(--dark-border);
           border-radius: var(--border-radius-sm);
           background: var(--secondary-color);
           color: white;
@@ -1934,7 +2809,7 @@ javascript: (() => {
           border: 1px solid var(--light-border);
           border-radius: var(--border-radius-sm);
           font-size: var(--font-size-base);
-          background: var(--light-surface); /* light-bg */
+          background: var(--light-surface);
           box-sizing: border-box;
           transition: var(--transition);
         }
@@ -1973,7 +2848,7 @@ javascript: (() => {
 
         .highlights-counter {
           font-size: var(--font-size-sm);
-          color: var(--litght-text);
+          color: var(--light-text);
           text-align: center;
           padding: var(--spacing-sm);
           background: var(--light-bg);
@@ -2018,7 +2893,7 @@ javascript: (() => {
         }
 
         .highlight-item:hover::before {
-          opacity: 1;
+          opacity: 0;
         }
 
         .highlight-item:hover {
@@ -2027,24 +2902,20 @@ javascript: (() => {
           box-shadow: var(--shadow-sm);
         }
 
-        .highlight-item:hover::before {
-          opacity: 0;
-        }
-
-        .highlight-item.selected {
-          background: var(--primary-color);
-          border-color: var(--primary-color);
-          color: white;
-        }
+.highlight-item.selected {
+      background: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: white !important;
+    }
 
         .unified-container[data-theme="dark"] .highlight-item.selected {
           background: var(--dark-surface);
           border-color: var(--primary-color);
         }
 
-        .highlight-item.selected::before {
-          opacity: 1;
-        }
+.highlight-item.selected::before {
+      opacity: 1 !important;
+    }
 
         .highlight-content {
           flex: 1;
@@ -2085,40 +2956,40 @@ javascript: (() => {
           opacity: 0.8;
         }
 
-            .highlight-meta {
-              display: flex;
-              justify-content: space-between;
-              font-size: var(--font-size-sm);
-              color: var(--light-surface);
-              gap: var(--spacing-sm);
-              flex-wrap: wrap;
-            }
+        .highlight-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: var(--font-size-sm);
+          color: var(--light-surface);
+          gap: var(--spacing-sm);
+          flex-wrap: wrap;
+        }
 
-           .highlight-meta span {
-             white-space: nowrap;
-           }
+        .highlight-meta span {
+          white-space: nowrap;
+        }
 
-           .highlight-item hr {
-            border: none;
-            border-top: 1px solid #ccc;
-            margin: 0.8em 0;
-            width: 100%;
-            flex-basis: 100%;
-          }
-    
-         .highlight-id {
-           font-weight: bold;
-           color: var(--warning-color);
-         }
+        .highlight-item hr {
+          border: none;
+          border-top: 1px solid #ccc;
+          margin: 0.8em 0;
+          width: 100%;
+          flex-basis: 100%;
+        }
+
+        .highlight-id {
+          font-weight: bold;
+          color: var(--warning-color);
+        }
         
-         .highlight-date {
-           flex-grow: 1;
-           text-align: center;
-         }
+        .highlight-date {
+          flex-grow: 1;
+          text-align: center;
+        }
         
-         .highlight-length {
-           font-style: italic;
-         }
+        .highlight-length {
+          font-style: italic;
+        }
 
         .delete-highlight {
           background: none;
@@ -2167,7 +3038,7 @@ javascript: (() => {
           border: 1px solid var(--light-border);
           border-radius: var(--border-radius-sm);
           font-size: var(--font-size-sm);
-          background: var(--light-surface); /* light-bg */
+          background: var(--light-surface);
           color: var(--light-text);
           transition: var(--transition);
         }
@@ -2200,19 +3071,10 @@ javascript: (() => {
         }
 
         .fact-check-control select {
-         flex: 1;
+          flex: 1;
         }
 
         /* ===== PREVIEW DE CITAÇÃO MELHORADO ===== */
-
-        /* Inativo
-        .citation-preview-container {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-sm);
-        }
-        */  
-
         .citation-preview {
           width: 100%;
           min-height: 120px;
@@ -2230,15 +3092,6 @@ javascript: (() => {
           transition: var(--transition);
         }
 
-        /* Inativo
-        .fieldset .citation-preview {
-         padding: 0;
-         margin: -12px;
-         width: 100%;
-         box-sizing: border-box;
-        }
-        */
-
         .citation-preview:focus {
           border-color: var(--primary-color);
           box-shadow: 0 0 0 2px var(--primary-light);
@@ -2249,10 +3102,9 @@ javascript: (() => {
           margin-top: var(--spacing-md);
         }
 
-        /* Estilo quando o modo clipboard está ativo */
         [data-mode="clipboard"].active ~ .refresh-btn {
-         background-color: var(--primary-color);
-         color: white;
+          background-color: var(--primary-color);
+          color: white;
         }
 
         /* ===== ESTADOS VAZIOS E AJUDA MELHORADOS ===== */
@@ -2263,7 +3115,7 @@ javascript: (() => {
         } 
 
         [data-theme="dark"] .empty-state {
-         color: var(--dark-text-muted);
+          color: var(--dark-text-muted);
         }
 
         .empty-state p {
@@ -2278,18 +3130,13 @@ javascript: (() => {
         .highlights-help {
           text-align: center;
           padding: var(--spacing-sm);
-          /* background: var(--light-surface); */
-          border: none; /* 1px solid var(--light-border); */
-          /* border-radius: var(--border-radius-sm); */
         }
 
         kbd {
-          /* background: var(--warning-color); */
           color: var(--warning-color);
           padding: 2px var(--spacing-xs);
           border-radius: 2px;
           font-size: var(--font-size-sm);
-          /* font-weight: bold; */
           font-family: monospace;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
@@ -2350,37 +3197,30 @@ javascript: (() => {
           .unified-container {
             width: calc(100vw - 20px);
             max-width: calc(100vw - 20px);
+          }
           #highlight-action-btn {
             font-size: var(--font-size-xl);
           }
-        }
-
           .control-buttons {
             flex-direction: column;
           }
-
           .mode-buttons {
             flex-direction: column;
           }
-
           .control-group {
             flex-direction: column;
             align-items: stretch;
           }
-
           .control-group label {
             min-width: auto;
             color: var(--primary-color);
           }
-
           .readability-control {
             flex-direction: column;
           }
-
           .header-content {
             min-height: 44px;
           }
-
           .control-btn {
             min-width: 32px;
             min-height: 32px;
@@ -2410,7 +3250,7 @@ javascript: (() => {
           outline-offset: 2px;
         }
 
-        button:focus,
+        /* button:focus, */
         input:focus,
         select:focus,
         textarea:focus {
@@ -2418,8 +3258,8 @@ javascript: (() => {
           outline-offset: 2px;
         }
 
-        fieldset textarea { /* teste */
-         border: none;
+        fieldset textarea {
+          border: none;
         }
 
         .highlight-item:focus {
@@ -2459,787 +3299,162 @@ javascript: (() => {
     _getHighlightStyles() {
       return `
         .unified-highlight {
-              transition: all ${CONFIG.UI.ANIMATION_DURATION}ms ease;
-              cursor: pointer;
-              border-radius: 3px;
-              padding: 1px 3px;
-              position: relative;
-            }
+          transition: all ${CONFIG.UI.ANIMATION_DURATION}ms ease;
+          cursor: pointer;
+          border-radius: 3px;
+          padding: 1px 3px;
+          position: relative;
+        }
 
         .unified-highlight:hover {
-              box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.4);
-              transform: scale(1.02);
-            }
+          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.4);
+          transform: scale(1.02);
+        }
 
         .unified-highlight:active {
           transform: scale(0.98);
         }
 
-      .unified-highlight::after {
-        content: '📋';
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        font-size: 12px;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-
-      .unified-highlight:hover::after {
-        opacity: 1;
-      }
-
-      /* Inativo para teste
-        .unified-highlight:focus {
-          outline: 2px solid var(--primary-color);
-          outline-offset: 1px;
-        }
-
-        .unified-highlight::before {
-          content: '';
+        .unified-highlight::after {
+          content: '📋';
           position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(45deg, transparent, rgba(0, 123, 255, 0.1), transparent);
-          border-radius: 4px;
+          top: -8px;
+          right: -8px;
+          font-size: 12px;
           opacity: 0;
-          transition: opacity ${CONFIG.UI.ANIMATION_DURATION}ms ease;
-          pointer-events: none;
+          transition: opacity 0.2s ease;
         }
 
-        .unified-highlight:hover::before {
+        .unified-highlight:hover::after {
           opacity: 1;
         }
-        */
       `;
     }
 
-    // ======================
-    // MÉTODOS FALTANTES (IMPLEMENTAÇÃO COMPLETA)
-    // ======================
-
-    _updateUI() {
-      this._updateHighlightsCounter();
-      this._updateHighlightsList();
-      this._updateCitation();
-      this._updateThemeToggleIcon();
-      this._updateHideToggleText();
-      this._updateHighlightsSelectedButton();
-    }
-
-    _updateHighlightsSelectedButton() {
-      const selectedCount = this.state.selectedHighlights.size;
-      const highlightsBtn = this.shadow.querySelector(
-        '[data-mode="highlights"]'
-      );
-      if (highlightsBtn) {
-        highlightsBtn.textContent = `Highlights Selected (${selectedCount})`;
-      }
-    }
-
-    _updateHideToggleText() {
-      const hideToggle = this.elements.hideToggle;
-      if (hideToggle) {
-        hideToggle.textContent = this.state.hiddenHighlights
-          ? CONFIG.TEXTS.SHOW_HIGHLIGHTS
-          : CONFIG.TEXTS.HIDE_HIGHLIGHTS;
-      }
-    }
-
-    _updateHighlightsCounter() {
-      const counter = this.elements.container?.querySelector(
-        ".highlights-counter"
-      );
-      if (counter) {
-        const total = this.state.highlights.size;
-        const selected = this.state.selectedHighlights.size;
-        counter.textContent = `${selected}/${total} selected`;
-      }
-    }
-
-    _updateHighlightsList() {
-      console.log("Highlights no estado:", this.state.highlights); // Debug
-      const list = this.elements.highlightsList;
-      if (!list) return;
-
-      let highlights = Array.from(this.state.highlights.values());
-
-      // Aplicar filtro de busca se houver query
-      if (this.state.searchQuery) {
-        highlights = highlights.filter((highlight) =>
-          highlight.text.toLowerCase().includes(this.state.searchQuery)
-        );
-      }
-
-      // Ordenação mantida
-      const sorted = highlights.sort((a, b) => a.timestamp - b.timestamp);
-
-      if (sorted.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <p>⚠️ ${
-                  this.state.searchQuery
-                    ? "No matches found"
-                    : "No highlights found"
-                }</p>
-                <small>${
-                  this.state.searchQuery
-                    ? "Try a different search term"
-                    : "To highlight, select the text and<br>type <kbd>H</kbd>, or press ⚡ on top"
-                }</small>
-            </div>
-        `;
-        return;
-      }
-
-      list.innerHTML = sorted
-        .map((highlight, index) => {
-          const date = new Date(highlight.timestamp);
-          const dateStr = this._formatDate(date);
-
-          return `
-                <div class="highlight-item ${
-                  this.state.selectedHighlights.has(highlight) ? "selected" : ""
-                }" 
-                     data-highlight-id="${highlight.id}" 
-                     tabindex="0" 
-                     role="listitem">
-                    <div class="highlight-content">
-                        <div class="highlight-text">${this._escapeHtml(
-                          highlight.text
-                        )}</div>${
-            highlight.text.length > 100
-              ? '<button class="toggle-expand" aria-label="Toggle expand">▼</button>'
-              : ""
-          }
-                        <hr>
-                        <div class="highlight-meta">
-                            <span class="highlight-id">⚡ ${index + 1}</span>
-                            <span class="highlight-date">${dateStr}</span>
-                            <span class="highlight-length">${
-                              highlight.text.length
-                            } char</span>
-                        </div>
-                    </div>
-                    <button class="delete-highlight" aria-label="Remover destaque" title="Remover destaque">×</button>
-                </div>
-            `;
-        })
-        .join("");
-
-      // Adicionar event listeners
-
-      list.querySelectorAll(".toggle-expand").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const item = e.target.closest(".highlight-item");
-          item.classList.toggle("expanded");
-          e.target.textContent = item.classList.contains("expanded")
-            ? "▲"
-            : "▼";
-        });
-      });
-
-      list.querySelectorAll(".highlight-item").forEach((item) => {
-        const id = item.dataset.highlightId;
-
-        item.addEventListener("click", (e) => {
-          if (!e.target.classList.contains("delete-highlight")) {
-            this._toggleHighlightSelection(id);
-            this._scrollToHighlight(id);
-          }
-        });
-      });
-
-      list.querySelectorAll(".delete-highlight").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const item = btn.closest(".highlight-item");
-          const id = item.dataset.highlightId;
-          this._deleteHighlight(id);
-        });
-      });
-    }
-
-    _formatDate(date) {
-      const day = date.getDate().toString().padStart(2, "0");
-      const month = (date.getMonth() + 1).toString().padStart(2, "0");
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
-      const seconds = date.getSeconds().toString().padStart(2, "0");
-
-      return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
-    }
-
-    _deleteHighlight(id) {
-      const highlight = this.state.highlights.get(id);
-      if (!highlight) return;
-
-      // Remover do DOM
-      const element = document.getElementById(id);
-      if (element) {
-        const parent = element.parentNode;
-        while (element.firstChild) {
-          parent.insertBefore(element.firstChild, element);
-        }
-        parent.removeChild(element);
-      }
-
-      // Remover do estado
-      this.state.highlights.delete(id);
-      this.state.selectedHighlights.delete(highlight);
-
-      this._saveHighlights();
-      this._updateHighlightsSelectedButton();
-      this._updateUI();
-      this._showFeedback("Highlight removed", "info");
-    }
-
-    _updateCitation() {
-      const preview = this.elements.citationPreview;
-      if (!preview) return;
-
-      let content = "";
-      const format = this.elements.formatSelect?.value || "plain";
-      const pageTitle = document.title;
-      const pageUrl = location.href;
-      const currentDate = new Date().toLocaleDateString();
-
-      switch (this.state.citationMode) {
-        case "highlights":
-          // Converte para array e ordena por timestamp para manter consistência
-          const selected = Array.from(this.state.selectedHighlights).sort(
-            (a, b) => a.timestamp - b.timestamp
-          ); // Ordem crescente
-
-          if (selected.length === 0) {
-            content = "⚠️ No highlights selected";
-          } else {
-            content = this._formatContent(
-              selected.map((h) => h.text),
-              format,
-              pageTitle,
-              pageUrl,
-              currentDate
-            );
-          }
-          break;
-
-        case "selection":
-          const currentSelection = window.getSelection().toString().trim();
-          if (currentSelection) {
-            content = this._formatContent(
-              [currentSelection],
-              format,
-              pageTitle,
-              pageUrl,
-              currentDate
-            );
-          } else {
-            content = `⚠️ No selection\n---\n`;
-          }
-          break;
-
-        case "clipboard":
-          content = this.state.clipboardContent || "⚠️ Empty clipboard";
-          // Aplicar formatação mesmo para conteúdo do clipboard se não estiver vazio
-          if (content !== "⚠️ Empty clipboard") {
-            content = this._formatContent(
-              [content],
-              format,
-              pageTitle,
-              pageUrl,
-              currentDate
-            );
-          }
-          break;
-      }
-
-      // Adicionar link de legibilidade se habilitado
-      if (
-        this.state.readabilityEnabled &&
-        content &&
-        !content.includes("⚠️ No highlights") &&
-        content !== "⚠️ Empty clipboard"
-      ) {
-        const service = this.elements.readabilitySelect?.value;
-        const serviceConfig = CONFIG.CITATION.READABILITY_SERVICES.find(
-          (s) => s.value === service
-        );
-        if (serviceConfig) {
-          content += `\n- Readability: ${serviceConfig.url(location.href)}`;
-        }
-      }
-
-      // Adicionar link de fact-checking se habilitado
-      if (
-        this.state.factCheckEnabled &&
-        content &&
-        !content.includes("⚠️ No highlights")
-      ) {
-        const service = this.elements.factCheckSelect?.value;
-        const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
-          (s) => s.value === service
-        );
-
-        if (serviceConfig) {
-          // Extrair o primeiro parágrafo ou linha para a busca
-          const searchText = content.split("\n")[0].substring(0, 100);
-          content += `\n- Fact-Check: ${serviceConfig.url(searchText)}`;
-        }
-      }
-
-      content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.creditsUrl}`;
-
-      preview.value = content;
-    }
-
-    _formatContent(texts, format, pageTitle, pageUrl, date) {
-      switch (format) {
-        case "whatsapp":
-          return this._formatWhatsApp(texts, pageTitle, pageUrl);
-        case "academic":
-          return this._formatAcademic(texts, pageTitle, pageUrl, date);
-        case "html":
-          return this._formatHTML(texts, pageTitle, pageUrl);
-        case "markdown":
-          return this._formatMarkdown(texts, pageTitle, pageUrl);
-        case "twitter":
-          return this._formatTwitter(texts, pageTitle, pageUrl);
-        case "plain":
-        default:
-          return this._formatPlain(texts, pageTitle, pageUrl);
-      }
-    }
-
-    _formatWhatsApp(texts, title, url) {
-      let content = `*${title}*\n\n`;
-      content += texts.map((t) => `➤ ${t}`).join("\n\n");
-      content += `\n\n- Source: ${url}`;
-      return content;
-    }
-
-    _formatAcademic(texts, title, url, date) {
-      let content = `${title}\n`;
-      content += `Acesso em: ${date}\n\n`;
-      content += texts.map((t, i) => `Citação ${i + 1}: "${t}"`).join("\n\n");
-      content += `\n\nDisponível em: ${url}`;
-      return content;
-    }
-
-    _formatHTML(texts, title, url) {
-      let content = `<h2>${title}</h2>`;
-      content += `<ul>`;
-      content += texts.map((t) => `<li>${t}</li>`).join("");
-      content += `</ul>`;
-      content += `</br>`;
-      content += `- Source: <a href="${url}" target="_blank">${url}</a>`;
-      return content;
-    }
-
-    _formatMarkdown(texts, title, url) {
-      let content = `## ${title}\n\n`;
-      content += texts.map((t) => `- ${t}`).join("\n\n");
-      content += `\n\n- Source: (${url})`;
-      return content;
-    }
-
-    _formatTwitter(texts, title, url) {
-      const maxLength = 280 - url.length - 5; // 5 chars for space and ellipsis
-      let content = `${title}\n\n`;
-      const mainText = texts.join(" ");
-
-      if (content.length + mainText.length > maxLength) {
-        content += mainText.substring(0, maxLength - content.length) + "...";
-      } else {
-        content += mainText;
-      }
-
-      content += `\n\n- ${url}`;
-      return content;
-    }
-
-    _formatPlain(texts, title, url) {
-      return `${title}\n\n${texts.join("\n\n")}\n\n- Souce: ${url}`;
-    }
-
-    _getActionContent() {
-      const format = this.elements.formatSelect.value;
-      const rawContent = this.elements.citationPreview.value;
-
-      if (!rawContent) return null;
-
-      // Formatar conforme o tipo selecionado
-      switch (format) {
-        case "html":
-          return `<blockquote>${rawContent.replace(
-            /\n/g,
-            "<br>"
-          )}</blockquote>`;
-
-        case "markdown":
-          return rawContent
-            .split("\n")
-            .map((line) => `> ${line}`)
-            .join("\n");
-
-        case "plain":
-          return rawContent;
-
-        case "whatsapp":
-          return `${rawContent}`;
-
-        case "twitter":
-          const maxLength = 280 - 24; // 24 para URL e espaços
-          return rawContent.length > maxLength
-            ? `${rawContent.substring(0, maxLength)}...`
-            : rawContent;
-
-        case "academic":
-        default:
-          return `${rawContent}`;
-      }
-    }
-
-    _copyContent(content) {
-      navigator.clipboard
-        .writeText(content)
-        .then(() =>
-          this._showFeedback("Content copied to clipboard!", "success")
-        )
-        .catch((err) => {
-          console.error("Copy failed:", err);
-          this._showFeedback("Failed to copy content", "error");
-        });
-    }
-
-    _shareContent(platform, content) {
-      let url;
-      const pageUrl = encodeURIComponent(location.href);
-
-      if (platform === "whatsapp") {
-        url = `https://wa.me/?text=${encodeURIComponent(
-          `${content}\n\n${pageUrl}`
-        )}`;
-      } else {
-        // twitter
-        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          content
-        )}&url=${pageUrl}`;
-      }
-
-      window.open(url, "_blank", "width=600,height=400");
-    }
-
-    _sendEmail() {
-      // Obter o conteúdo formatado da citação
-      const content = this.elements.citationPreview?.value || "";
-      if (
-        !content ||
-        content === "⚠️ No highlights selected" ||
-        content === "⚠️ Empty clipboard"
-      ) {
-        this._showFeedback("No valid content to send by email", "warning");
-        return;
-      }
-
-      // Criar elementos do e-mail
-      const pageTitle = document.title;
-      const subject = `${pageTitle} [© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}]`;
-      const body = encodeURIComponent(content);
-
-      // Criar o link mailto com todos os parâmetros
-      const mailtoLink = `mailto:?subject=${encodeURIComponent(
-        subject
-      )}&body=${body}`;
-
-      // Abrir nova janela com o cliente de e-mail
-      try {
-        const emailWindow = window.open(
-          mailtoLink,
-          "_blank",
-          "noopener,noreferrer"
-        );
-
-        if (
-          !emailWindow ||
-          emailWindow.closed ||
-          typeof emailWindow.closed === "undefined"
-        ) {
-          throw new Error("Popup bloqueado");
-        }
-
-        this._showFeedback("Email client opened in new window", "success");
-      } catch (error) {
-        console.error("Falha ao abrir cliente de e-mail:", error);
-        this._showFeedback("Allow popups to open email client", "error");
-      }
-    }
-
-    _downloadContent(content) {
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${new Date()
-        .toISOString()
-        .slice(0, 10)}_EasyShare_ByMagasine.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    _handleSearch(query) {
-      this.state.searchQuery = query.toLowerCase();
-      this._updateHighlightsList();
-
-      const clearBtn = this.elements.clearSearch;
-      if (clearBtn) {
-        clearBtn.classList.toggle("hidden", !query);
-      }
-
-      if (query === "") {
-        this.elements.searchInput.value = "";
-      }
-    }
-
-    _toggleSortOrder() {
-      this.state.sortOrder =
-        this.state.sortOrder === "creation" ? "alphabetical" : "creation";
-      this._updateHighlightsList();
-      this._saveSettings();
-
-      const sortBtn = this.elements.sortToggle;
-      if (sortBtn) {
-        sortBtn.textContent =
-          this.state.sortOrder === "creation"
-            ? CONFIG.TEXTS.SORT_CREATION
-            : CONFIG.TEXTS.SORT_ALPHABETICAL;
-      }
-    }
-
-    _setCitationMode(mode) {
-      this.state.citationMode = mode;
-
-      // Atualizar botões de modo
-      this.elements.citationModes?.forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.mode === mode);
-        btn.setAttribute("aria-checked", btn.dataset.mode === mode);
-      });
-
-      // Se o modo for clipboard, atualizar automaticamente
-      if (mode === "clipboard") {
-        this._updateClipboardContent();
-      } else {
-        this._updateCitation();
-      }
-
-      this._saveSettings();
-    }
-
-    _toggleReadability() {
-      this.state.readabilityEnabled =
-        this.elements.readabilityCheck?.checked || false;
-      this._updateCitation();
-      this._saveSettings();
-    }
-
-    _toggleFactCheck() {
-      this.state.factCheckEnabled =
-        this.elements.factCheckCheck?.checked || false;
-      this._updateCitation();
-      this._saveSettings();
-
-      const message = this.state.factCheckEnabled
-        ? CONFIG.TEXTS.FACT_CHECK_ENABLED
-        : CONFIG.TEXTS.FACT_CHECK_DISABLED;
-      this._showFeedback(message, "info");
-    }
-
-    _handleActionSelect(e) {
-      const action = e.target.value;
-      if (!action) return;
-
-      // Reset do seletor após ação
-      e.target.value = "";
-
-      // Obter conteúdo formatado
-      const content = this._getActionContent();
-
-      if (!content || content === "⚠️ No highlights selected") {
-        this._showFeedback(
-          "⚠️ No content available for this action",
-          "warning"
-        );
-        return;
-      }
-
-      // Executar ação específica
-      switch (action) {
-        case "copy":
-          this._copyContent(content);
-          break;
-
-        case "whatsapp":
-          this._shareContent(action, content);
-          break;
-
-        case "twitter":
-          this._shareContent(action, content);
-          break;
-
-        case "email":
-          this._sendEmail(content);
-          break;
-
-        case "download":
-          this._downloadContent(content);
-          break;
-
-        default:
-          console.warn("Unknown action:", action);
-      }
-    }
-
-    _openReadability() {
-      const service = this.elements.readabilitySelect?.value;
-      const serviceConfig = CONFIG.CITATION.READABILITY_SERVICES.find(
-        (s) => s.value === service
-      );
-
-      if (serviceConfig) {
-        const url = serviceConfig.url(location.href);
-        window.open(url, "_blank");
-      }
-    }
-
-    _openFactCheck() {
-      try {
-        const service = this.elements.factCheckSelect?.value;
-        const serviceConfig = CONFIG.FACT_CHECK_SERVICES.find(
-          (s) => s.value === service
-        );
-
-        if (!serviceConfig) {
-          this._showFeedback("Select a fact-checking service", "error");
-          return;
-        }
-
-        // Obter texto baseado no modo
-        let searchText = "";
-        switch (this.state.citationMode) {
-          case "highlights":
-            const selected = Array.from(this.state.selectedHighlights);
-            searchText = selected[0]?.text || document.title;
-            break;
-          case "selection":
-            searchText =
-              window.getSelection().toString().trim() || document.title;
-            break;
-          case "clipboard":
-            searchText = this.state.clipboardContent || document.title;
-            break;
-          default:
-            searchText = document.title;
-        }
-
-        // Abrir serviço
-        const url = serviceConfig.url(searchText);
-        window.open(url, "_blank", "noopener,noreferrer");
-
-        this._showFeedback(`Checking in ${serviceConfig.name}...`, "success");
-      } catch (error) {
-        console.error("Fact-Check Error:", error);
-        this._showFeedback("Error opening verification", "error");
-      }
-    }
-
-    // Novo método auxiliar para preparar o texto
-    _prepareFactCheckText(text) {
-      if (!text) return "";
-
-      // 1. Limite aumentado para 70 caracteres (melhor cobertura)
-      let processed = text.substring(0, 70);
-
-      // 2. Otimização para frases completas
-      const lastSpace = processed.lastIndexOf(" ");
-      if (lastSpace > 50) {
-        // Se cortou no meio de uma palavra
-        processed = processed.substring(0, lastSpace);
-      }
-
-      // 3. Sanitização aprimorada
-      processed = processed
-        .replace(/[#%&*+=\\|<>{}ˆ$?!'":@]/g, "") // Mantém hífens e vírgulas
-        .replace(/\s{2,}/g, " ")
-        .trim();
-
-      // 4. Fallback inteligente
-      return processed || document.title.substring(0, 50);
-    }
-
-    _escapeHtml(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    // ======================
-    // LIMPEZA E DESTRUIÇÃO
-    // ======================
-
-    destroy() {
-      if (this.isDestroyed) return;
-
-      this.isDestroyed = true;
-
-      // Remover event listeners globais
-      document.removeEventListener("mouseup", this._handleMouseUp);
-      window.removeEventListener("beforeunload", this._handleBeforeUnload);
-      document.removeEventListener(
-        "selectionchange",
-        this.state._handleSingleSelectionChange
-      );
-
-      // Parar observers
-      if (this.observer) {
-        this.observer.disconnect();
-      }
-
-      if (this.themeObserver) {
-        this.themeObserver.removeEventListener(
-          "change",
-          this._handleThemeChange
-        );
-      }
-
-      // Remover elementos DOM
-      if (this.host && this.host.parentNode) {
-        this.host.parentNode.removeChild(this.host);
-      }
-
-      if (this.globalStyle && this.globalStyle.parentNode) {
-        this.globalStyle.parentNode.removeChild(this.globalStyle);
-      }
-
-      // Limpar referências
-      delete window.unifiedCitationHighlighterInstance;
-
-      console.log("UnifiedTool destroyed successfully");
+    _getMainTemplate() {
+      return `
+<div class="unified-header" id="header">
+  <div class="header-content">
+    <div class="app-title">
+      <h3 class="app-name">${CONFIG.APP_INFO.name}</h3>
+      <a class="app-version" href="${CONFIG.APP_INFO.versionUrl}" title="© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}" target="_blank" rel="noopener">${CONFIG.APP_INFO.version}</a>
+    </div>
+    <div class="header-controls">
+      <button id="highlight-action-btn" class="control-btn" aria-label="Criar destaque" title="Criar destaque (H)">⚡</button>
+      <button id="theme-toggle" class="control-btn" aria-label="Toggle theme" title="Toggle theme">🌙</button>
+      <button id="minimize-button" class="control-btn" aria-label="Minimize" title="Minimize">−</button>
+      <button id="close-button" class="control-btn" aria-label="Close" title="Close">×</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tab-navigation" role="tablist">
+<button id="tab-highlights" class="tab-btn" role="tab" aria-selected="true" aria-controls="highlights-tab">
+  Highlights List
+</button>
+<button id="tab-citation" class="tab-btn active" role="tab" aria-selected="false" aria-controls="citation-tab">
+  Citation Options
+</button>
+</nav>
+
+<main class="unified-content">
+  <section id="highlights-tab" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-highlights">
+<div class="highlights-controls">
+  <div class="search-container">
+    <label for="search-input" class="visually-hidden">Search highlights</label>
+    <input type="text" id="search-input" placeholder="Search highlights..." aria-label="Search highlights">
+    <button id="clear-search" class="clear-btn hidden" aria-label="Clear search" title="Clear search">×</button>
+  </div>
+
+  <div class="control-buttons">
+    <button id="hide-toggle" class="btn btn-secondary">${CONFIG.TEXTS.HIDE_HIGHLIGHTS}</button>
+    <button id="move-up" class="btn btn-secondary" title="Move selected up">↑</button>
+    <button id="move-down" class="btn btn-secondary" title="Move selected down">↓</button>
+    <button id="clear-highlights" class="btn btn-danger">Clear All</button>
+  </div>
+
+  <div class="highlights-counter">0/0 selected</div>
+</div>
+
+    <div id="highlights-list" class="highlights-list" role="list"></div>
+
+    <div class="highlights-help">
+      <small>
+      <br>Click on the highlight list to select and scroll
+      </small>
+    </div>
+  </section>
+
+<section id="citation-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-citation">
+  <!-- Agrupamento: Source -->
+  <fieldset class="fieldset">
+    <legend>Text Source to Load</legend>
+    <div class="mode-buttons" role="radiogroup" aria-label="Citation mode">
+      <button class="mode-btn active" data-mode="highlights" role="radio" aria-checked="true">Highlights Selected (0)</button>
+      <button class="mode-btn" data-mode="selection" role="radio" aria-checked="false">Single Selection</button>
+      <button class="mode-btn" data-mode="clipboard" role="radio" aria-checked="false">Clipboard</button>
+    </div>
+  </fieldset>
+  
+  <!-- Agrupamento: Preview -->
+  <fieldset class="fieldset">
+    <legend>Text Preview</legend>
+    <div class="citation-preview-container">
+      <textarea id="citation-preview" class="citation-preview" readonly aria-label="Citation preview"></textarea>
+    </div>
+  </fieldset>
+
+  <!-- Checkbox separado, fora dos agrupamentos -->
+  <div class="control-group">
+    <input type="checkbox" id="readability-check" checked>
+    <label for="readability-check">Add Readability Services Links</label>
+  </div>
+    
+  <div class="control-group">
+    <input type="checkbox" id="fact-check-check" checked>
+    <label for="fact-check-check">${CONFIG.TEXTS.ADD_FACT_CHECK}</label>
+  </div>
+
+  <!-- Agrupamento: Selectors -->
+  <fieldset class="fieldset">
+    <legend>Text Settings and Submission </legend>
+
+    <div class="control-group">
+      <label for="format-select">Formats:</label>
+      <select id="format-select" aria-label="Citation format"></select>
+    </div>
+
+    <div class="control-group">
+      <label for="readability-select">Readability:</label>
+      <div class="readability-control">
+        <select id="readability-select" aria-label="Reading service"></select>
+        <button id="readability-button" class="btn btn-secondary" aria-label="Open readable page" title="Open readable page">🔎</button>
+      </div>
+   </div>
+        
+   <div class="control-group">
+        <label for="fact-check-select">Fact Check:</label>
+        <select id="fact-check-select" aria-label="Fact-check service"></select>
+        <button id="fact-check-button" class="btn btn-secondary" aria-label="Open fact check page" title="Open fact check page">🔎</button>
+   </div>
+
+    <div class="control-group">
+      <label for="action-select" id="submit">Submit: ⚡</label>
+      <select id="action-select" aria-label="Action for citation"></select>
+    </div>
+  </fieldset>
+
+</section>
+</main>
+      `;
     }
   }
 
   // Lógica de alternância:
   if (window.unifiedCitationHighlighterInstance) {
-    // Se a instância existe, destrua-a e remova a referência global
     window.unifiedCitationHighlighterInstance.destroy();
     delete window.unifiedCitationHighlighterInstance;
   } else {
-    // Se não existe, crie uma nova instância
     new UnifiedTool();
   }
 })();
