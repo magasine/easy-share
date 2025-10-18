@@ -24,7 +24,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share",
-      version: "v20250905",
+      version: "v20251018",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -618,20 +618,34 @@ javascript: (() => {
           return cleanup();
         }
 
-        // ▼ NOVA VALIDAÇÃO: Impede a seleção de múltiplos parágrafos ▼
+        // ▼ NOVA VALIDAÇÃO: Impede seleção de múltiplos parágrafos (CORRIGIDA) ▼
         const startParent = range.startContainer.parentNode;
         const endParent = range.endContainer.parentNode;
 
-        // Verifica se os pais dos nós de início e fim da seleção são diferentes
-        // Isso indica que a seleção atravessa limites de elementos de bloco (p.ex., parágrafos)
-        if (startParent !== endParent) {
+        // Função auxiliar: Encontra o parágrafo (ou elemento de bloco) ancestral
+        function getParagraphAncestor(node) {
+          return node.closest(
+            'p, div[contenteditable], [data-block="paragraph"]'
+          );
+        }
+
+        // Obtém o parágrafo de início e fim da seleção
+        const startParagraph = getParagraphAncestor(startParent);
+        const endParagraph = getParagraphAncestor(endParent);
+
+        // Verifica se os parágrafos ancestrais são diferentes
+        if (
+          !startParagraph ||
+          !endParagraph ||
+          startParagraph !== endParagraph
+        ) {
           this._showFeedback(
             "❌ Please select text within a single paragraph.",
             "error"
           );
           return cleanup();
         }
-        // ▲ Fim da nova validação ▲
+        // ▲ Fim da validação corrigida ▲
 
         const rangeData = this._serializeRange(range);
         if (!rangeData) {
@@ -1664,7 +1678,7 @@ javascript: (() => {
         }
       }
 
-      content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.creditsUrl}`;
+      // content += `\n---\n© ${CONFIG.APP_INFO.name} by ${CONFIG.APP_INFO.credits}\n${CONFIG.APP_INFO.creditsUrl}`; // inativo temporariamente
 
       preview.value = content;
     }
