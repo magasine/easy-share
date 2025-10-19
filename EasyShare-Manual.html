@@ -1,293 +1,361 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Share ⚡ - Manual de Usuário</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            color: #333;
-            line-height: 1.6;
-        }
-        header {
-            background-color: #031D35;
-            color: #fff;
-            padding: 20px 0;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        header h1 {
-            margin: 0;
-            font-size: 2.5em;
-            letter-spacing: 1px;
-        }
-        nav.main-nav {
-            background-color: #143858;
-            padding: 10px 0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        nav.main-nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        nav.main-nav ul li {
-            margin: 0 15px;
-        }
-        nav.main-nav ul li a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: bold;
-            padding: 8px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        nav.main-nav ul li a:hover,
-        nav.main-nav ul li a.active {
-            background-color: #205986;
-            color: #fff;
-        }
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
-        }
-        .section {
-            padding: 20px 0;
-            border-bottom: 1px solid #eee;
-        }
-        .section:last-child {
-            border-bottom: none;
-        }
-        .section h2 {
-            color: #031D35;
-            font-size: 2em;
-            margin-bottom: 15px;
-            border-left: 5px solid #205986;
-            padding-left: 10px;
-        }
-        .section p, .section ul {
-            color: #555;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-        .section ul {
-            list-style: disc;
-            margin-left: 20px;
-        }
-        .section ol {
-            list-style: decimal;
-            margin-left: 20px;
-        }
-        .section ul li, .section ol li {
-            margin-bottom: 8px;
-        }
-        .image-placeholder {
-            width: 100%;
-            height: 300px;
-            background-color: #e0e0e0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Easy Share ⚡ - Manual de Usuário</title>
+   <style>
+      :root {
+         --primary: #031D35;
+         --secondary: #143858;
+         --accent: #205986;
+         --bg-light: #f4f7f6;
+         --text-dark: #333;
+         --text-light: #555;
+         --white: #fff;
+         --border: #eee;
+         --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+         --transition: all 0.3s ease;
+      }
+
+      @media (prefers-color-scheme: dark) {
+         :root {
+            --bg-light: #121212;
+            --text-dark: #e0e0e0;
+            --text-light: #b0b0b0;
+            --primary: #205986;
+            --secondary: #031D35;
+            --accent: #143858;
+            --white: #1e1e1e;
+            --border: #333;
+         }
+      }
+
+      body {
+         font-family: 'Segoe UI', system-ui, sans-serif;
+         margin: 0;
+         padding: 0;
+         background-color: var(--bg-light);
+         color: var(--text-dark);
+         line-height: 1.6;
+         scroll-behavior: smooth;
+      }
+
+      header {
+         background-color: var(--primary);
+         color: var(--white);
+         padding: 2rem 0;
+         text-align: center;
+         box-shadow: var(--shadow);
+      }
+
+      header h1 {
+         margin: 0;
+         font-size: 2.5rem;
+         letter-spacing: 1px;
+      }
+
+      header p {
+         margin: 0.5rem 0 0;
+         font-size: 1.2rem;
+         opacity: 0.8;
+      }
+
+      nav.main-nav {
+         background-color: var(--secondary);
+         padding: 1rem 0;
+         position: sticky;
+         top: 0;
+         z-index: 10;
+         box-shadow: var(--shadow);
+      }
+
+      nav.main-nav ul {
+         list-style: none;
+         padding: 0;
+         margin: 0;
+         display: flex;
+         justify-content: center;
+         flex-wrap: wrap;
+         gap: 1rem;
+      }
+
+      nav.main-nav ul li a {
+         color: var(--white);
+         text-decoration: none;
+         font-weight: 600;
+         padding: 0.5rem 1rem;
+         border-radius: 0.5rem;
+         transition: var(--transition);
+      }
+
+      nav.main-nav ul li a:hover,
+      nav.main-nav ul li a.active {
+         background-color: var(--accent);
+         transform: translateY(-2px);
+      }
+
+      .container {
+         max-width: 960px;
+         margin: 2rem auto;
+         padding: 1.5rem;
+         background-color: var(--white);
+         border-radius: 1rem;
+         box-shadow: var(--shadow);
+      }
+
+      .section {
+         padding: 1.5rem 0;
+         border-bottom: 1px solid var(--border);
+         scroll-margin-top: 5rem;
+      }
+
+      .section:last-child {
+         border-bottom: none;
+      }
+
+      .section h2 {
+         color: var(--primary);
+         font-size: 2rem;
+         margin-bottom: 1rem;
+         border-left: 5px solid var(--accent);
+         padding-left: 0.75rem;
+      }
+
+      .section p,
+      .section ul,
+      .section ol {
+         color: var(--text-light);
+         font-size: 1.1rem;
+         margin-bottom: 1rem;
+      }
+
+      .section ul {
+         list-style: disc;
+         padding-left: 1.5rem;
+      }
+
+      .section ol {
+         list-style: decimal;
+         padding-left: 1.5rem;
+      }
+
+      .section li {
+         margin-bottom: 0.5rem;
+      }
+
+      .example-image {
+         width: 100%;
+         aspect-ratio: 16/9;
+         border-radius: 0.5rem;
+         margin-bottom: 1.5rem;
+         box-shadow: var(--shadow);
+         display: block;
+      }
+
+      kbd {
+         background-color: var(--border);
+         border-radius: 4px;
+         border: 1px solid #b4b4b4;
+         padding: 0.25rem 0.5rem;
+         font-family: monospace;
+         font-weight: 600;
+         font-size: 0.9rem;
+      }
+
+      footer {
+         text-align: center;
+         padding: 1.5rem;
+         background-color: var(--primary);
+         color: var(--white);
+         font-size: 0.9rem;
+      }
+
+      footer a {
+         color: var(--white);
+         text-decoration: underline;
+         transition: var(--transition);
+      }
+
+      footer a:hover {
+         color: var(--accent);
+      }
+
+      @media (max-width: 768px) {
+         .container {
+            margin: 1rem;
+            padding: 1rem;
+         }
+
+         nav.main-nav ul {
+            flex-direction: column;
             align-items: center;
-            color: #888;
-            font-size: 1.2em;
-            margin-bottom: 30px;
-            background-image: url('https://via.placeholder.com/900x300?text=Sua+Imagem+do+App+Aqui'); /* Placeholder image */
-            background-size: cover;
-            background-position: center;
-        }
-        kbd {
-            background-color: #eee;
-            border-radius: 3px;
-            border: 1px solid #b4b4b4;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, .2), 0 2px 0 0 rgba(255, 255, 255, .7) inset;
-            color: #333;
-            display: inline-block;
-            font-family: monospace;
-            font-size: .85em;
-            font-weight: 700;
-            padding: 2px 4px;
-            white-space: nowrap;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 30px;
-            background-color: #031D35;
-            color: #fff;
-            font-size: 0.9em;
-            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-        }
-        footer a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-    </style>
+         }
+
+         header h1 {
+            font-size: 2rem;
+         }
+
+         .section h2 {
+            font-size: 1.8rem;
+         }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+         * {
+            transition: none !important;
+         }
+      }
+   </style>
 </head>
+
 <body>
-    <header>
-        <h1>Easy Share ⚡</h1>
-        <p>Manual de Usuário</p>
-    </header>
+   <header>
+      <h1>Easy Share ⚡</h1>
+      <p>Manual de Usuário</p>
+   </header>
 
-    <nav class="main-nav">
-        <ul>
-            <li><a href="#introducao">Introdução</a></li>
-            <li><a href="#instalacao">Instalação</a></li>
-            <li><a href="#uso-basico">Uso Básico</a></li>
-            <li><a href="#gerenciamento-destaques">Gerenciamento de Destaques</a></li>
-            <li><a href="#opcoes-citacao">Opções de Citação</a></li>
-            <li><a href="#verificacao-fatos">Verificação de Fatos</a></li>
-            <li><a href="#configuracoes-avancadas">Configurações Avançadas</a></li>
-            <li><a href="#solucao-problemas">Solução de Problemas</a></li>
-            <li><a href="#tips">Dicas de Uso</a></li>
-        </ul>
-    </nav>
+   <nav class="main-nav">
+      <ul>
+         <li><a href="#introducao">Introdução</a></li>
+         <li><a href="#instalacao">Instalação</a></li>
+         <li><a href="#uso-basico">Uso Básico</a></li>
+         <li><a href="#gerenciamento-destaques">Gerenciamento de Destaques</a></li>
+         <li><a href="#opcoes-citacao">Opções de Citação</a></li>
+         <li><a href="#verificacao-fatos">Verificação de Fatos</a></li>
+         <li><a href="#configuracoes-avancadas">Configurações Avançadas</a></li>
+         <li><a href="#solucao-problemas">Solução de Problemas</a></li>
+         <li><a href="#dicas">Dicas de Uso</a></li>
+      </ul>
+   </nav>
 
+   <div class="container">
+      <img src="./img_EasyShare_DarkLight_Manual.png" width="350"
+         alt="Captura de tela da interface do Easy Share mostrando os modos light e dark"
+         style="display: block; margin: 0 auto;" class="">
+      <section id="introducao" class="section">
+         <h2>Introdução</h2>
+         <p>Bem-vindo ao manual do <strong>Easy Share ⚡</strong>, versão v20251018. Esta ferramenta permite destacar,
+            organizar e citar conteúdo web de forma eficiente, com uma interface intuitiva e recursos avançados.</p>
+         <p>Novidades incluem validação de seleções em parágrafos únicos, edição direta do preview de citações, e
+            restauração automática de destaques em páginas dinâmicas.</p>
+      </section>
 
-    <div class="container">
-        <section id="introducao" class="section">
-            <h2>Introdução</h2>
-    <div class="container">
-        <div class="off-image-placeholder">
-         <img src="./img_EasyShare_DarkLight_Manual.png" width="450" alt="Layout do Easy Share: Dark e Light"
-            style="display: block; margin: 0 auto;">
-        </div>
-            <p>Bem-vindo ao manual do usuário do <strong>Easy Share ⚡</strong>, uma ferramenta inovadora para realçar, organizar e citar informações importantes diretamente de qualquer página web. Este manual irá guiá-lo por todas as funcionalidades, desde a instalação até o uso avançado.</p>
-            <p>Com o Easy Share ⚡, você pode transformar a maneira como interage com o conteúdo online, tornando a pesquisa, o estudo e o compartilhamento de informações mais eficientes.</p>
-        </section>
+      <section id="instalacao" class="section">
+         <h2>Instalação</h2>
+         <!-- <img src="https://via.placeholder.com/960x540?text=Bookmarklet+na+Barra" alt="Captura de tela mostrando o bookmarklet do Easy Share na barra de favoritos" class="example-image"> -->
+         <p>O Easy Share ⚡ é um <em>bookmarklet</em>, não exigindo instalação de extensões. Siga os passos:</p>
+         <ol>
+            <li><strong>Arraste o Bookmarklet:</strong> Arraste o botão "Easy Share ⚡" da página oficial para a barra de
+               favoritos do navegador.</li>
+            <li><strong>Criação Manual:</strong> Crie um favorito com o nome "Easy Share" e cole o código JavaScript
+               (iniciado por <code>javascript: (() => {...})();</code>) no campo URL.</li>
+         </ol>
+         <p>Clique no bookmarklet em qualquer página para ativar a ferramenta.</p>
+      </section>
 
-        <section id="instalacao" class="section">
-            <h2>Instalação</h2>
-            <p>O Easy Share ⚡ é um <em>bookmarklet</em>, o que significa que não requer instalação complexa ou extensões. Siga os passos simples:</p>
-            <ol>
-                <li><strong>Arraste o Bookmarklet:</strong> Arraste o botão "Easy Share ⚡" (disponibilizado na página de download ou fonte oficial) para a sua barra de favoritos do navegador.</li>
-                <li><strong>Ou Crie Manualmente:</strong> Se preferir, crie um novo favorito no seu navegador com qualquer nome (ex: "Easy Share") e cole o código JavaScript completo do Easy Share ⚡ (que geralmente começa com <code>javascript: (() => { /* ... */ })();</code>) no campo de URL.</li>
-            </ol>
-            <p>Após adicionar, basta clicar no bookmarklet na sua barra de favoritos em qualquer página para ativar a ferramenta.</p>
-        </section>
+      <section id="uso-basico" class="section">
+         <h2>Uso Básico</h2>
+         <!-- <img src="https://via.placeholder.com/960x540?text=Texto+Destacado" alt="Captura de tela de texto destacado em uma página com o Easy Share" class="example-image"> -->
+         <ul>
+            <li><strong>Realçar Texto:</strong> Selecione o texto e pressione <kbd>Ctrl</kbd> ao soltar o mouse ou use
+               <kbd>H</kbd>. O texto é destacado e adicionado à lista.</li>
+            <li><strong>Validação de Seleção:</strong> Seleções devem estar em um único parágrafo (ex.: não cruzando
+               múltiplos <code>&lt;p&gt;</code>). Limite de 10.000 caracteres. Feedback aparece para seleções inválidas.
+            </li>
+            <li><strong>Copiar Destaque:</strong> Clique no texto destacado na página para copiar. Uma animação verde
+               confirma.</li>
+            <li><strong>Interface:</strong> Uma janela flutuante aparece no canto da tela, gerenciando destaques e
+               citações. Arraste para reposicionar.</li>
+         </ul>
+      </section>
 
-        <section id="uso-basico" class="section">
-            <h2>Uso Básico</h2>
-            <ul>
-                <li><strong>Realçar Texto:</strong> Para criar um destaque, selecione o texto desejado na página e pressione <kbd>Ctrl</kbd> enquanto solta o botão do mouse. O texto selecionado será automaticamente realçado e adicionado à sua lista de destaques.</li>
-                <li><strong>Validação de Seleção:</strong> A ferramenta agora valida o texto selecionado. Se o texto for muito longo (limite de 10.000 caracteres) ou vazio, você receberá uma mensagem de feedback.</li>
-                <li><strong>Copiar Destaque:</strong> Clique em um destaque na própria página para copiá-lo rapidamente para a área de transferência. Uma breve animação indicará o sucesso.</li>
-                <li><strong>Interagir com a Ferramenta:</strong> Após ativar, uma pequena janela aparecerá no canto da tela. Esta é a interface principal da ferramenta, onde você gerenciará seus destaques e citações. Você pode arrastá-la para reposicionar.</li>
-            </ul>
-        </section>
+      <section id="gerenciamento-destaques" class="section">
+         <h2>Gerenciamento de Destaques</h2>
+         <!-- <img src="https://via.placeholder.com/960x540?text=Lista+de+Destaques" alt="Captura de tela da aba Highlights List com destaques selecionados" class="example-image"> -->
+         <p>A aba "Highlights List" organiza seus destaques:</p>
+         <ul>
+            <li><strong>Lista:</strong> Veja todos os destaques com opção de expandir textos longos.</li>
+            <li><strong>Seleção:</strong> Clique para selecionar/desselecionar múltiplos destaques.</li>
+            <li><strong>Pesquisa:</strong> Use a barra de pesquisa para filtrar destaques.</li>
+            <li><strong>Ordenação:</strong> Alterne entre "↓ Creation" (cronológica) e "↑ A-Z" (alfabética).</li>
+            <li><strong>Reordenar:</strong> Use botões "↑" ou "↓" para mover destaques selecionados.</li>
+            <li><strong>Visibilidade:</strong> Botão "Hide/Show" alterna a visibilidade dos destaques na página.</li>
+            <li><strong>Limpar:</strong> "Clear All" remove todos os destaques após confirmação.</li>
+            <li><strong>Contador:</strong> Mostra destaques selecionados vs. total.</li>
+            <li><strong>Navegação:</strong> Clique em um destaque para rolar até ele na página.</li>
+         </ul>
+      </section>
 
-        <section id="gerenciamento-destaques" class="section">
-            <h2>Gerenciamento de Destaques</h2>
-            <p>A aba "Destaques" na ferramenta permite que você gerencie todos os trechos realçados:</p>
-            <ul>
-                <li><strong>Lista de Destaques:</strong> Visualize todos os seus destaques em uma lista organizada.</li>
-                <li><strong>Pesquisar Destaques:</strong> Utilize a barra de pesquisa para encontrar rapidamente trechos específicos que você destacou.</li>
-                <li><strong>Ordenar Destaques:</strong> Alterne entre a ordenação por "Criação" (ordem cronológica) e "Alfabética" (A-Z) clicando no botão de ordenação.</li>
-                <li><strong>Mover Destaques (Novo!):</strong> Selecione um único destaque na lista e use os botões "Mover para Cima" (⬆️) ou "Mover para Baixo" (⬇️) para reordenar sua posição na lista.</li>
-                <li><strong>Ocultar/Exibir Destaques:</strong> Clique no botão "Ocultar" para tornar todos os destaques transparentes na página, ou "Exibir" para mostrá-los novamente. Isso não os remove, apenas altera a visibilidade.</li>
-                <li><strong>Limpar Todos os Destaques:</strong> O botão "Limpar Tudo" removerá <strong>todos</strong> os destaques da página e da sua lista. <strong>(Novo: Uma confirmação será solicitada antes de prosseguir para evitar perdas acidentais.)</strong></li>
-            </ul>
-        </section>
+      <section id="opcoes-citacao" class="section">
+         <h2>Opções de Citação</h2>
+         <!-- <img src="https://via.placeholder.com/960x540?text=Aba+Citation+Options" alt="Captura de tela da aba Citation Options com preview editável" class="example-image"> -->
+         <p>A aba "Citation Options" permite gerar e compartilhar citações:</p>
+         <ul>
+            <li><strong>Fontes:</strong>
+               <ul>
+                  <li><strong>Highlights Selected:</strong> Usa destaques selecionados.</li>
+                  <li><strong>Single Selection:</strong> Usa a seleção atual.</li>
+                  <li><strong>Clipboard:</strong> Usa o conteúdo da área de transferência.</li>
+               </ul>
+            </li>
+            <li><strong>Formatos:</strong> WhatsApp, Academic, HTML, Markdown, Plain Text, Twitter/X.</li>
+            <li><strong>Ações:</strong> Copy, WhatsApp, Twitter/X, Email, Download.</li>
+            <li><strong>Readability:</strong> Ative para incluir links de PrintFriendly ou Archive.is. Clique em 🔎 para
+               abrir.</li>
+            <li><strong>Preview Editável:</strong> Edite a citação diretamente na textarea. Use "Reset Preview" para
+               restaurar o original.</li>
+         </ul>
+      </section>
 
-        <section id="opcoes-citacao" class="section">
-            <h2>Opções de Citação</h2>
-            <p>A aba "Citação" oferece diversas maneiras de gerar e compartilhar o conteúdo realçado:</p>
-            <ul>
-                <li><strong>Modos de Citação:</strong>
-                    <ul>
-                        <li><strong>Destaques Selecionados:</strong> Gera uma citação dos destaques que você marcou na lista.</li>
-                        <li><strong>Conteúdo da Página:</strong> Cita o conteúdo principal da página (útil para artigos, blogs).</li>
-                        <li><strong>Área de Transferência:</strong> Gera uma citação baseada no texto que está atualmente na sua área de transferência.</li>
-                    </ul>
-                </li>
-                <li><strong>Formatos de Citação (Novos e Atualizados!):</strong> Escolha entre vários formatos para exportar sua citação:
-                    <ul>
-                        <li><strong>Formato WhatsApp:</strong> Ideal para compartilhamento rápido em conversas.</li>
-                        <li><strong>Citação Acadêmica:</strong> Formato padrão para trabalhos e pesquisas.</li>
-                        <li><strong>HTML:</strong> Gera o conteúdo formatado em HTML.</li>
-                        <li><strong>Markdown:</strong> Formato leve para textos simples e documentação.</li>
-                        <li><strong>Texto Simples:</strong> Apenas o texto puro dos destaques.</li>
-                        <li><strong>Twitter/X:</strong> Otimizado para postagens curtas na plataforma.</li>
-                    </ul>
-                </li>
-                <li><strong>Ações de Citação (Novo!):</strong> Além de copiar, você pode agora:
-                    <ul>
-                        <li><strong>Copiar:</strong> Copia a citação gerada para a área de transferência. (Feedback aprimorado para indicar quando o clipboard está sendo atualizado ou se há erro de permissão.)</li>
-                        <li><strong>WhatsApp:</strong> Abre o WhatsApp com a citação pronta para envio.</li>
-                        <li><strong>Twitter/X:</strong> Abre o Twitter/X com a citação para uma nova postagem.</li>
-                        <li><strong>Email:</strong> Abre seu cliente de e-mail com a citação.</li>
-                        <li><strong>Download:</strong> Baixa a citação como um arquivo de texto.</li>
-                    </ul>
-                </li>
-                <li><strong>Serviços de Leitura (Readability - Novo!):</strong> Converta a página atual para um formato mais legível ou arquive-a:
-                    <ul>
-                        <li><strong>PrintFriendly:</strong> Abre a página em uma versão otimizada para impressão e leitura.</li>
-                        <li><strong>Archive.is:</strong> Cria um arquivo permanente da página web para referência futura.</li>
-                    </ul>
-                    Basta selecionar o serviço e clicar no botão correspondente.
-                </li>
-                <li><strong>Pré-visualização:</strong> Veja como sua citação ficará antes de copiá-la ou exportá-la.</li>
-            </ul>
-        </section>
+      <section id="verificacao-fatos" class="section">
+         <h2>Verificação de Fatos</h2>
+         <!-- <img src="https://via.placeholder.com/960x540?text=Verificação+de+Fatos" alt="Captura de tela da configuração de verificação de fatos na aba Citation Options" class="example-image"> -->
+         <p>Integra serviços de verificação de fatos:</p>
+         <ul>
+            <li><strong>Ativar/Desativar:</strong> Marque "Add Fact-Check Links" para incluir links na citação.</li>
+            <li><strong>Serviços:</strong> Google Fact Check, Aos Fatos (Brasil), Lupa (Brasil).</li>
+            <li><strong>Uso:</strong> Selecione o serviço e clique em 🔎 para abrir a busca com o título da página ou
+               texto destacado.</li>
+         </ul>
+      </section>
 
-        <section id="verificacao-fatos" class="section">
-            <h2>Verificação de Fatos (Novo!)</h2>
-            <p>O Easy Share ⚡ agora integra ferramentas de verificação de fatos para auxiliar na pesquisa de informações. Esta funcionalidade permite que você rapidamente consulte serviços de checagem para o texto destacado.</p>
-            <ul>
-                <li><strong>Habilitar/Desabilitar:</strong> Marque ou desmarque a caixa "Adicionar Links de Verificação de Fatos" para ativar ou desativar a exibição dos links.</li>
-                <li><strong>Serviços Disponíveis:</strong> Escolha entre os seguintes serviços de verificação:
-                    <ul>
-                        <li><strong>Google Fact Check:</strong> Pesquisa o texto selecionado na ferramenta de verificação de fatos do Google.</li>
-                        <li><strong>Aos Fatos (Brasil):</strong> Direciona para a pesquisa do site Aos Fatos.</li>
-                        <li><strong>Lupa (Brasil):</strong> Direciona para a pesquisa do site Lupa.</li>
-                    </ul>
-                </li>
-                <li><strong>Como Usar:</strong> Com a opção de verificação de fatos ativada e o serviço selecionado, clique no botão "Verificar Fatos" para abrir uma nova aba com os resultados da busca pelo seu destaque.</li>
-            </ul>
-        </section>
+      <section id="configuracoes-avancadas" class="section">
+         <h2>Configurações Avançadas</h2>
+         <!-- <img src="https://via.placeholder.com/960x540?text=Configurações+Avançadas" alt="Captura de tela mostrando o botão de tema e minimizar/fechar" class="example-image"> -->
+         <ul>
+            <li><strong>Tema:</strong> Alterne entre dark/light com 🌙/☀️. Respeita a preferência do sistema.</li>
+            <li><strong>Posição:</strong> Arraste a barra de título para reposicionar. A posição é salva.</li>
+            <li><strong>Minimizar/Fechar:</strong> Use − para minimizar, × para fechar. Destaques persistem.</li>
+         </ul>
+      </section>
 
-        <section id="configuracoes-avancadas" class="section">
-            <h2>Configurações Avançadas</h2>
-            <ul>
-                <li><strong>Alternar Tema (Novo!):</strong> Clique no ícone de sol (☀️) ou lua (🌙) na barra de título da ferramenta para alternar entre os temas claro e escuro. A ferramenta lembrará sua preferência.</li>
-                <li><strong>Arrastar e Reposicionar:</strong> Você pode clicar e arrastar a barra de título da ferramenta para movê-la para qualquer lugar na sua tela, ajustando-a à sua preferência. A ferramenta lembrará a última posição.</li>
-                <li><strong>Minimizar/Fechar:</strong> Use os botões na barra de título para minimizar a ferramenta (mantendo-a ativa, mas fora do caminho) ou fechá-la. Se fechar, seus destaques serão salvos, mas a interface desaparecerá até ser reativada.</li>
-            </ul>
-        </section>
+      <section id="solucao-problemas" class="section">
+         <h2>Solução de Problemas</h2>
+         <!-- <img src="./img_EasyShare_DarkLight_Manual.png" alt="Captura de tela de uma mensagem de feedback de erro (ex.: seleção inválida)" class="example-image"> -->
+         <ul>
+            <li><strong>Destaques Sumiram:</strong> O MutationObserver restaura automaticamente após mudanças no DOM.
+            </li>
+            <li><strong>Problemas ao Copiar:</strong> Verifique permissões de clipboard no navegador.</li>
+            <li><strong>Seleção Inválida:</strong> Selecione texto dentro de um único parágrafo.</li>
+         </ul>
+      </section>
 
-        <section id="solucao-problemas" class="section">
-            <h2>Solução de Problemas</h2>
-            <ul>
-                <li><strong>Destaques Sumiram:</strong> Se um destaque parecer "sumir" após o carregamento dinâmico de conteúdo em uma página, o Easy Share ⚡ tentará restaurá-lo automaticamente.</li>
-                <li><strong>Problemas ao Copiar:</strong> Em alguns navegadores, pode ser necessário conceder permissão para que o Easy Share ⚡ acesse sua área de transferência. Se tiver problemas ao copiar, verifique as configurações de permissão do seu navegador.</li>
-            </ul>
-        </section>
+      <section id="dicas" class="section">
+         <h2>Dicas de Uso</h2>
+         <ul>
+            <li><strong>Persistência:</strong> Destaques são salvos por URL via localStorage.</li>
+            <li><strong>Restauração:</strong> Automática para páginas dinâmicas.</li>
+            <li><strong>Fact-Check:</strong> Usa título ou h1 para buscas precisas.</li>
+            <li><strong>Workflow:</strong> Teste formatos e ações para otimizar seu uso.</li>
+         </ul>
+      </section>
+   </div>
 
-        <section id="tips" class="section">
-            <h2>Dicas de Uso</h2>
-            <ul>
-                <li><strong>Persistência de Destaques:</strong> Seus destaques e configurações são salvos automaticamente no seu navegador, então você não precisa se preocupar em perdê-los ao navegar ou fechar a página.</li>
-                <li><strong>Restauração Automática:</strong> Se, por algum motivo, um destaque parecer "sumir" da página (por exemplo, após um carregamento dinâmico de conteúdo), o Easy Share ⚡ tentará restaurá-lo automaticamente.</li>
-                <li><strong>Explore os Formatos:</strong> Experimente os diferentes formatos de citação e ações para encontrar o que melhor se adapta ao seu fluxo de trabalho.</li>
-            </ul>
-        </section>
-    </div>
-
-    <footer>
-        <p>Autor: <a href="https://linktr.ee/magasine/shop" target="_blank" rel="noopener">@magasine</a></p>
-    </footer>
+   <footer>
+      <p>Autor: <a href="https://linktr.ee/magasine/shop" target="_blank" rel="noopener">@magasine</a></p>
+   </footer>
 </body>
+
 </html>
