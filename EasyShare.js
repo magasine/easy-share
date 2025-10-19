@@ -24,7 +24,7 @@ javascript: (() => {
   const CONFIG = {
     APP_INFO: {
       name: "Easy Share",
-      version: "v20251018",
+      version: "v20251019",
       versionUrl:
         "https://drive.google.com/file/d/1i_xH-UD1kcPZWUVTfVKNz2W7FxcPd8sy/view?usp=sharing",
       credits: "@magasine",
@@ -275,6 +275,7 @@ javascript: (() => {
         clipboardError: null,
         clipboardPermission: "prompt",
         position: { top: "20px", right: "20px", left: "auto" },
+        previewContent: "",
         factCheckEnabled: true,
         factCheckService: "google-fact-check",
         highlightLock: false,
@@ -370,6 +371,7 @@ javascript: (() => {
         actionSelect: shadowRoot.getElementById("action-select"),
         readabilityButton: shadowRoot.getElementById("readability-button"),
         citationPreview: shadowRoot.getElementById("citation-preview"),
+        resetPreview: shadowRoot.getElementById("reset-preview"),
         minimizeButton: shadowRoot.getElementById("minimize-button"),
         closeButton: shadowRoot.getElementById("close-button"),
         refreshClipboard: shadowRoot.getElementById("refresh-clipboard"),
@@ -412,6 +414,18 @@ javascript: (() => {
 
     _setupEventListeners() {
       if (this.isDestroyed) return;
+
+      // Novo: Listener para edições na textarea
+      this.elements.citationPreview?.addEventListener("input", (e) => {
+        this.state.previewContent = e.target.value;
+      });
+
+      // Novo: Listener para resetar preview
+      this.elements.resetPreview?.addEventListener("click", () => {
+        this.state.previewContent = ""; // Limpa edições manuais
+        this._updateCitation(); // Regenera o preview original
+        this._showFeedback("Preview reset to original content", "info");
+      });
 
       // Eventos globais
       document.addEventListener("mouseup", this._handleMouseUp);
@@ -1645,6 +1659,10 @@ javascript: (() => {
           }
           break;
       }
+
+      // Novo: Usa edições manuais se existirem; caso contrário, o conteúdo gerado
+      content = this.state.previewContent || content;
+      preview.value = content;
 
       // Adicionar link de legibilidade se habilitado
       if (
@@ -3414,7 +3432,8 @@ javascript: (() => {
   <fieldset class="fieldset">
     <legend>Text Preview</legend>
     <div class="citation-preview-container">
-      <textarea id="citation-preview" class="citation-preview" readonly aria-label="Citation preview"></textarea>
+      <textarea id="citation-preview" class="citation-preview" aria-label="Citation preview"></textarea>
+      <button id="reset-preview" class="btn btn-secondary" style="margin-top: 8px; width: 100%;" aria-label="Reset preview to original" title="Reset preview to original">Reset Preview</button>
     </div>
   </fieldset>
 
